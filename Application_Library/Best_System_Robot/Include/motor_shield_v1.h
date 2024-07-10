@@ -30,6 +30,17 @@ typedef struct {
     int32_t count;      // Encoder count
 } Encoder_TypeDef;
 
+// Define a structure for Motor Thresholds and PID parameters
+typedef struct {
+    int static_friction_threshold;
+    int low_speed_threshold;
+    int success_count;
+    int failure_count;
+    float kp;
+    float ki;
+    float kd;
+} MotorThresholds;
+
 typedef struct {
     My_GPIO_TypeDef IN1;           // GPIO for IN1 pin
     My_GPIO_TypeDef IN2;           // GPIO for IN2 pin
@@ -41,8 +52,9 @@ typedef struct {
     Encoder_TypeDef encoder;       // Encoder structure
     bool has_encoder;              // Flag indicating if encoder exists
     float integral_error;          // Integral error for PID control
-    int previous_error;            // Previous error for PID control
+    float previous_error;          // Previous error for PID control
     uint32_t last_update_time;     // Time of the last update for dt calculation
+    MotorThresholds thresholds;    // Motor thresholds and PID parameters
 } DC_Motor_TypeDef;
 
 // Define a structure for Motor_Shield_V1

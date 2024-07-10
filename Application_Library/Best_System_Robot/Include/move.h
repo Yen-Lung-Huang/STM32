@@ -8,6 +8,13 @@ extern "C" {
 
 #include "motor_shield_v1.h"
 
+typedef enum {
+    MOVE_FORWARD,
+    TURN,
+    STRAFE,
+    DIAGONAL
+} MovementMode;
+
 void set_wheel_speeds(int m1, int m2, int m3, int m4);
 
 //void wheels_degree_set(float front_left, float front_right, float rear_left, float rear_right);

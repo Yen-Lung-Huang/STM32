@@ -2,15 +2,11 @@
 
 #define DC_MOTOR_MIN 0
 #define DC_MOTOR_MAX 999
-#define STATIC_FRICTION_THRESHOLD 500
-#define LOW_SPEED_THRESHOLD 375
 #define MAX_ACCELERATION 1000
 #define MAX_ADJUSTMENT_FACTOR 0.8f
 #define MIN_ADJUSTMENT_FACTOR 0.3f
-#define KP 1.0f
-#define KI 0.1f
-#define KD 0.01f
-#define K_BACK_EMF 0.01f
+#define STOP_ACCELERATION_FACTOR 1.5f  // Increase deceleration when stopping
+#define USE_BACK_EMF_COMPENSATION 0    // Set to 1 to enable back EMF compensation
 
 
 /* Motor Configuration--------------------------------------------------------*/
@@ -299,6 +295,31 @@ void ms_v1_servo_control(Motor_Shield_V1 *motor_shield, uint8_t servo_number, fl
 
 /* Soft Motor Control ---------------------------------------------------------------*/
 
+
+// Define a function to adjust the motor thresholds
+void adjust_thresholds(DC_Motor_TypeDef *motor, bool success)
+{
+    if (success) {
+        motor->thresholds.success_count++;
+        motor->thresholds.failure_count = 0;
+        if (motor->thresholds.success_count > 5) {
+            motor->thresholds.static_friction_threshold -= 10;
+            motor->thresholds.low_speed_threshold -= 5;
+            motor->thresholds.success_count = 0;
+        }
+    } else {
+        motor->thresholds.failure_count++;
+        motor->thresholds.success_count = 0;
+        if (motor->thresholds.failure_count > 3) {
+            motor->thresholds.static_friction_threshold += 10;
+            motor->thresholds.low_speed_threshold += 5;
+            motor->thresholds.failure_count = 0;
+        }
+    }
+
+    motor->thresholds.static_friction_threshold = (motor->thresholds.static_friction_threshold < 500) ? 500 : motor->thresholds.static_friction_threshold;
+    motor->thresholds.low_speed_threshold = (motor->thresholds.low_speed_threshold < 375) ? 375 : motor->thresholds.low_speed_threshold;
+}
 // Define a function to control the motor with one input
 void soft_motor_control(void *motor_shield, enum Motor_Shield_Type type, uint8_t dc_motor_number, int target_speed)
 {
@@ -308,9 +329,9 @@ void soft_motor_control(void *motor_shield, enum Motor_Shield_Type type, uint8_t
         return;
     }
 
+    MotorThresholds *mt = &motor->thresholds;
     target_speed = (target_speed > DC_MOTOR_MAX) ? DC_MOTOR_MAX : (target_speed < -DC_MOTOR_MAX ? -DC_MOTOR_MAX : target_speed);
     motor->target_speed = target_speed;
-    // printf("Current Speed: %d, Target Speed: %d, Static Friction Overcome: %d\n", motor->current_speed, motor->target_speed, motor->static_friction_overcome);
 
     uint32_t current_time = HAL_GetTick();
 
@@ -318,11 +339,17 @@ void soft_motor_control(void *motor_shield, enum Motor_Shield_Type type, uint8_t
         float dt = (current_time - motor->last_update_time) / 1000.0f;
         int speed_diff = motor->target_speed - motor->current_speed;
 
+        // PID control
+        motor->integral_error += speed_diff * dt;
+        float derivative = (speed_diff - motor->previous_error) / dt;
+        float pid_output = mt->kp * speed_diff + mt->ki * motor->integral_error + mt->kd * derivative;
+
         if (target_speed == 0) {
-            // Logic for stopping when target speed is 0
-            if (abs(motor->current_speed) > LOW_SPEED_THRESHOLD) {
-                motor->current_speed -= (motor->current_speed > 0) ? MAX_ACCELERATION * dt : -MAX_ACCELERATION * dt;
-                if (abs(motor->current_speed) < LOW_SPEED_THRESHOLD) {
+            // Faster stopping logic
+            float stop_deceleration = MAX_ACCELERATION * STOP_ACCELERATION_FACTOR * dt;
+            if (abs(motor->current_speed) > mt->low_speed_threshold) {
+                motor->current_speed -= (motor->current_speed > 0) ? stop_deceleration : -stop_deceleration;
+                if (abs(motor->current_speed) < mt->low_speed_threshold) {
                     motor->current_speed = 0;
                 }
             } else {
@@ -330,21 +357,20 @@ void soft_motor_control(void *motor_shield, enum Motor_Shield_Type type, uint8_t
             }
             motor->static_friction_overcome = false;
         } else {
-            // Logic for non-zero target speeds
-            int effective_target_speed = (abs(target_speed) < LOW_SPEED_THRESHOLD) ?
-                                         (target_speed > 0 ? LOW_SPEED_THRESHOLD : -LOW_SPEED_THRESHOLD) : target_speed;
+            int effective_target_speed = (abs(target_speed) < mt->low_speed_threshold) ?
+                                         (target_speed > 0 ? mt->low_speed_threshold : -mt->low_speed_threshold) : target_speed;
 
-            // Check if direction has changed
             if (motor->current_speed * effective_target_speed < 0) {
                 // Handle direction change
-                motor->current_speed -= (motor->current_speed > 0) ? MAX_ACCELERATION * dt : -MAX_ACCELERATION * dt;
-                if (abs(motor->current_speed) < LOW_SPEED_THRESHOLD) {
+                float direction_change_deceleration = MAX_ACCELERATION * dt;
+                motor->current_speed -= (motor->current_speed > 0) ? direction_change_deceleration : -direction_change_deceleration;
+                if (abs(motor->current_speed) < mt->low_speed_threshold) {
                     motor->current_speed = 0;
-                    motor->static_friction_overcome = false;  // Reset static friction flag
+                    motor->static_friction_overcome = false;
                 }
             } else {
-                if (!motor->static_friction_overcome || abs(motor->current_speed) < LOW_SPEED_THRESHOLD) {
-                    motor->current_speed = (effective_target_speed > 0) ? STATIC_FRICTION_THRESHOLD : -STATIC_FRICTION_THRESHOLD;
+                if (!motor->static_friction_overcome || abs(motor->current_speed) < mt->low_speed_threshold) {
+                    motor->current_speed = (effective_target_speed > 0) ? mt->static_friction_threshold : -mt->static_friction_threshold;
                     motor->static_friction_overcome = true;
                 } else {
                     float speed_ratio = (float)abs(motor->current_speed) / DC_MOTOR_MAX;
@@ -352,7 +378,7 @@ void soft_motor_control(void *motor_shield, enum Motor_Shield_Type type, uint8_t
 
                     adjustment_factor *= (abs(effective_target_speed) > abs(motor->current_speed)) ? 1.2f : 0.8f;
 
-                    int speed_change = (int)((effective_target_speed - motor->current_speed) * adjustment_factor);
+                    int speed_change = (int)((pid_output + effective_target_speed - motor->current_speed) * adjustment_factor);
                     int max_speed_change = MAX_ACCELERATION * dt;
 
                     speed_change = (abs(speed_change) > max_speed_change) ?
@@ -368,9 +394,13 @@ void soft_motor_control(void *motor_shield, enum Motor_Shield_Type type, uint8_t
             }
         }
 
-        float back_emf = K_BACK_EMF * motor->current_speed;
-        float compensated_speed = motor->current_speed + back_emf;
-        float motor_input = compensated_speed / DC_MOTOR_MAX;
+        float motor_input = (float)motor->current_speed / DC_MOTOR_MAX;
+
+        #if USE_BACK_EMF_COMPENSATION
+        float back_emf = mt->k_back_emf * motor->current_speed;
+        motor_input += back_emf;
+        #endif
+
         motor_input = (motor_input > 1.0f) ? 1.0f : (motor_input < -1.0f ? -1.0f : motor_input);
 
         ms_motor_control(motor_shield, type, dc_motor_number, motor_input);
@@ -378,6 +408,9 @@ void soft_motor_control(void *motor_shield, enum Motor_Shield_Type type, uint8_t
         motor->previous_error = speed_diff;
         motor->last_update_time = current_time;
         motor->EN.soft_control_delay.Start(&motor->EN.soft_control_delay, 1);
+
+        // Update performance (this is where we would ideally use encoder feedback)
+        bool moved_as_expected = abs(motor->current_speed - target_speed) < mt->low_speed_threshold;
+        adjust_thresholds(motor, moved_as_expected);
     }
 }
-

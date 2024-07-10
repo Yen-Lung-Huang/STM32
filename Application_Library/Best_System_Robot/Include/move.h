@@ -6,7 +6,9 @@
 extern "C" {
 #endif
 
-#include "core.h"
+#include "motor_shield_v1.h"
+
+void set_wheel_speeds(int m1, int m2, int m3, int m4);
 
 //void wheels_degree_set(float front_left, float front_right, float rear_left, float rear_right);
 //void wheels_speed_set(float left_speed, float right_speed);

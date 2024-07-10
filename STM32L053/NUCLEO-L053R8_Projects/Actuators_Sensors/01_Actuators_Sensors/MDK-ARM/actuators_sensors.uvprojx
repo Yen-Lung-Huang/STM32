@@ -640,6 +640,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\Application_Library\Best_System_Robot\Source\timing_delays.c</FilePath>
             </File>
+            <File>
+              <FileName>move.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\Application_Library\Best_System_Robot\Source\move.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

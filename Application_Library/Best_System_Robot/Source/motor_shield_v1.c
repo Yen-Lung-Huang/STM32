@@ -2,8 +2,8 @@
 
 #define DC_MOTOR_MIN 0
 #define DC_MOTOR_MAX 999
-#define STATIC_FRICTION_THRESHOLD 200
-#define LOW_SPEED_THRESHOLD 100
+#define STATIC_FRICTION_THRESHOLD 500
+#define LOW_SPEED_THRESHOLD 375
 #define MAX_ACCELERATION 1000
 #define MAX_ADJUSTMENT_FACTOR 0.8f
 #define MIN_ADJUSTMENT_FACTOR 0.3f
@@ -12,7 +12,6 @@
 #define KD 0.01f
 #define K_BACK_EMF 0.01f
 
-#define PWM_PERIOD 1000  // Define the PWM period as 1000ms
 
 /* Motor Configuration--------------------------------------------------------*/
 
@@ -179,9 +178,6 @@ void ms_encoder_init(enum Motor_Shield_Type type)
 }
 
 
-
-
-
 /* Motor_Shield_V1 Control--------------------------------------------------------------*/
 
 // Helper function to get the DC motor object based on the motor shield type and motor number
@@ -204,6 +200,21 @@ uint8_t get_motor_bit(uint8_t dc_motor_number, uint8_t bit_index)
     static const uint8_t motor_bits[4][2] = {{2, 3}, {1, 4}, {5, 7}, {0, 6}};
     return motor_bits[dc_motor_number][bit_index];
 }
+
+
+// Set the target speed of the specified DC motor
+void set_motor_speed(void *motor_shield, enum Motor_Shield_Type type, uint8_t dc_motor_number, int target_speed)
+{
+    // Limit the speed range
+    target_speed = (target_speed > DC_MOTOR_MAX) ? DC_MOTOR_MAX : ((target_speed < -DC_MOTOR_MAX) ? -DC_MOTOR_MAX : target_speed);
+
+    // Get the DC motor object
+    DC_Motor_TypeDef *motor = get_dc_motor(motor_shield, type, dc_motor_number);
+    if (motor != NULL) {
+        motor->target_speed = target_speed;
+    }
+}
+
 
 // Define a function to control the motor direction and speed with one input
 void ms_motor_control(void *motor_shield, enum Motor_Shield_Type type, uint8_t dc_motor_number, float motor_input)

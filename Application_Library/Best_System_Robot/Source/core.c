@@ -6,8 +6,8 @@ void core_init(void)
     servos_init();
     ms_init(MS_V1, false);
     ms_init(MS_L29XX, true);
-    
-    printf( "Micro Tick test: %d\r\n", getCurrentMicros());
+
+    // printf( "Micro Tick test: %d\r\n", getCurrentMicros());
 }
 
 /* Loop Configuration---------------------------------------*/
@@ -89,14 +89,13 @@ bool json_action(char *JSON_STRING, uint16_t token_size) // sizeof(char)*strlen(
                         return false;                       // Invalid motor number
                     }
                     // Call the ms_motor_control function with the motor shield type, the motor number and input
-                    if (key[0] == 'M') {
-                        // If the key starts with 'M', use MS_V1 type
+                    if (key[0] == 'M') { // If the key starts with 'M', use MS_V1 type
                         // get_dc_motor(&motor_shield_v1, MS_V1, dc_motor_number)->target_speed = value;
                         // soft_motor_control(&motor_shield_v1, MS_V1, dc_motor_number, value);
                         ms_motor_control(&motor_shield_v1, MS_V1, dc_motor_number, value);
-                    } else if (key[0] == 'W') {
-                        // If the key starts with 'W', use MS_L29XX type
-                        get_dc_motor(&motor_shield_l29xx, MS_L29XX, dc_motor_number)->target_speed = value;
+                    } else if (key[0] == 'W') { // If the key starts with 'W', use MS_L29XX type
+                        // get_dc_motor(&motor_shield_l29xx, MS_L29XX, dc_motor_number)->target_speed = value;
+                        set_motor_speed(&motor_shield_l29xx, MS_L29XX, dc_motor_number, value);
                         // soft_motor_control(&motor_shield_l29xx, MS_L29XX, dc_motor_number, value);
                         // ms_motor_control(&motor_shield_l29xx, MS_L29XX, dc_motor_number, value);
                     } else {
@@ -111,6 +110,56 @@ bool json_action(char *JSON_STRING, uint16_t token_size) // sizeof(char)*strlen(
                 return false;                      // Invalid motor value
             }
         }
+
+
+        if (!strcmp(token->string, "move")) {
+            if (cJSON_IsNumber(token)) {
+                float speed = token->valueint;
+                set_wheel_speeds(speed, speed, speed, speed);
+                printf("Move: %.2f\r\n", speed);
+            } else if (cJSON_IsString(token) && !strcmp(token->valuestring, "stop")) {
+                set_wheel_speeds(0, 0, 0, 0);
+                printf("Stopping all wheels\r\n");
+            } else {
+                printf("Invalid move value\r\n");
+            }
+        }  else if (!strcmp(token->string, "turn")) {
+            if (cJSON_IsNumber(token)) {
+                float speed = token->valueint;
+                set_wheel_speeds(speed, -speed, speed, -speed);
+                printf("Turn: %.2f\r\n", speed);
+            } else {
+                printf("Invalid turn value\r\n");
+            }
+        } else if (!strcmp(token->string, "strafe")) {
+            if (cJSON_IsNumber(token)) {
+                float speed = token->valueint;
+                set_wheel_speeds(speed, -speed, -speed, speed);
+                printf("Strafe: %.2f\r\n", speed);
+            } else {
+                printf("Invalid strafe value\r\n");
+            }
+        } else if (!strcmp(token->string, "diagonal")) {
+            if (cJSON_IsObject(token)) {
+                cJSON *speed_item = cJSON_GetObjectItemCaseSensitive(token, "speed");
+                cJSON *direction_item = cJSON_GetObjectItemCaseSensitive(token, "direction");
+                if (speed_item && direction_item && cJSON_IsNumber(speed_item) && cJSON_IsNumber(direction_item)) {
+                    float speed = speed_item->valueint;
+                    int direction = direction_item->valueint;
+                    if (direction > 0) {
+                        set_wheel_speeds(speed, 0, 0, speed);  // right front
+                    } else {
+                        set_wheel_speeds(0, speed, speed, 0);  // left front
+                    }
+                    printf("Diagonal: Speed %.2f, Direction %d\r\n", speed, direction);
+                } else {
+                    printf("Invalid diagonal parameters\r\n");
+                }
+            } else {
+                printf("Invalid diagonal value\r\n");
+            }
+        }
+
 
         if (!strcmp(token->string, "servo")) {
             // Check if the key is "servo"
@@ -219,7 +268,7 @@ bool json_action(char *JSON_STRING, uint16_t token_size) // sizeof(char)*strlen(
                     // printf("Distance: %6.2f cm\n", HC_SR04_GetDistance(&hc_sr04[2]));
                     printf("Distance: %6.2f cm\n", hc_sr04[2].distance);
                     break;
-                
+
                 default:
                     printf("Invalid sensor number\n");
                     break;

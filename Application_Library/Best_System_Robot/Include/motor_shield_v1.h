@@ -96,6 +96,7 @@ void ms_gpio_init(enum Motor_Shield_Type type);
 void ms_encoder_init(enum Motor_Shield_Type type);
 
 uint8_t get_motor_bit(uint8_t dc_motor_number, uint8_t bit_index);
+void set_motor_speed(void *motor_shield, enum Motor_Shield_Type type, uint8_t dc_motor_number, int target_speed);
 
 void ms_motor_control(void *motor_shield, enum Motor_Shield_Type type, uint8_t dc_motor_number, float motor_input);
 void ms_v1_servo_control(Motor_Shield_V1 *motor_shield, uint8_t servo_number, float servo_input, bool mode);

@@ -317,9 +317,12 @@ void adjust_thresholds(DC_Motor_TypeDef *motor, bool success)
         }
     }
 
+    // Ensure thresholds do not go below initial values
     motor->thresholds.static_friction_threshold = (motor->thresholds.static_friction_threshold < 500) ? 500 : motor->thresholds.static_friction_threshold;
     motor->thresholds.low_speed_threshold = (motor->thresholds.low_speed_threshold < 375) ? 375 : motor->thresholds.low_speed_threshold;
 }
+
+
 // Define a function to control the motor with one input
 void soft_motor_control(void *motor_shield, enum Motor_Shield_Type type, uint8_t dc_motor_number, int target_speed)
 {
@@ -396,10 +399,10 @@ void soft_motor_control(void *motor_shield, enum Motor_Shield_Type type, uint8_t
 
         float motor_input = (float)motor->current_speed / DC_MOTOR_MAX;
 
-        #if USE_BACK_EMF_COMPENSATION
+#if USE_BACK_EMF_COMPENSATION
         float back_emf = mt->k_back_emf * motor->current_speed;
         motor_input += back_emf;
-        #endif
+#endif
 
         motor_input = (motor_input > 1.0f) ? 1.0f : (motor_input < -1.0f ? -1.0f : motor_input);
 

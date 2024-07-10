@@ -9,21 +9,18 @@ extern "C" {
 #include "motor_shield_v1.h"
 
 typedef enum {
-    MOVE_FORWARD,
+    MOVE,
     TURN,
     STRAFE,
     DIAGONAL
 } MovementMode;
 
+void adjust_motor_parameters(DC_Motor_TypeDef *motor, MovementMode mode);
+void set_wheel_modes(MovementMode mode);
 void set_wheel_speeds(int m1, int m2, int m3, int m4);
+void set_wheel_speeds_with_mode(int m1, int m2, int m3, int m4, MovementMode mode);
 
-//void wheels_degree_set(float front_left, float front_right, float rear_left, float rear_right);
-//void wheels_speed_set(float left_speed, float right_speed);
-//void wheels_stop(void);
-//void mobile_pwm_stop(void);
-//void turn_set(bool turn);
-//void move(float speed);
-//void turn(float speed);
+
 
 #ifdef __cplusplus
 }

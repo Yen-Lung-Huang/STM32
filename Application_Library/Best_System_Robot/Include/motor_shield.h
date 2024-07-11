@@ -1,6 +1,6 @@
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef MOTOR_SHIELD_V1_H
-#define MOTOR_SHIELD_V1_H
+#ifndef MOTOR_SHIELD_H
+#define MOTOR_SHIELD_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,7 +76,7 @@ extern Motor_Shield_L29XX motor_shield_l29xx;
 enum Motor_Shield_Type {MS_V1, MS_L29XX};
 
 // Define an enum type variable to store the motor names and values
-enum motor_shield_v1_motor {M1, M2, M3, M4};
+enum Motor_Shield_Motor {M1, M2, M3, M4};
 
 // Define an enum type variable to store the servo names and values
 // enum motor_shield_v1_servo {S1, S2};
@@ -104,6 +104,6 @@ void soft_motor_control(void *motor_shield, enum Motor_Shield_Type type, uint8_t
 }
 #endif
 
-#endif /* MOTOR_SHIELD_V1_H */
+#endif /* MOTOR_SHIELD_H */
 
 /*****END OF FILE*****/

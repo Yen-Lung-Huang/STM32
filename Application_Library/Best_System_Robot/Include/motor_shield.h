@@ -11,17 +11,11 @@ extern "C" {
 #include "servo.h"
 #include "74HC595.h"
 #include "timing_delays.h"
-#include "motor_types.h"
+#include "motor_core_types.h"
 
 /* MACRO DEFINITIONS */
 #define DC_MOTOR_MIN 0
 #define DC_MOTOR_MAX 999
-#define MAX_ACCELERATION 1000
-#define MAX_ADJUSTMENT_FACTOR 0.8f
-#define MIN_ADJUSTMENT_FACTOR 0.3f
-#define STOP_ACCELERATION_FACTOR 1.5f  // Increase deceleration when stopping
-#define USE_BACK_EMF_COMPENSATION 0    // Set to 1 to enable back EMF compensation
-
 
 // Define a structure for EN pin
 typedef struct {
@@ -79,14 +73,22 @@ typedef struct {
 extern Motor_Shield_V1 motor_shield_v1;
 extern Motor_Shield_L29XX motor_shield_l29xx;
 
-// // Define an enum type to indicate the type of motor shield
-// enum Motor_Shield_Type {MS_V1, MS_L29XX};
+typedef enum {
+    MS_V1,
+    MS_L29XX
+} Motor_Shield_Type;
 
-// // Define an enum type variable to store the motor names and values
-// enum Motor_Shield_Motor {M1, M2, M3, M4};
+typedef enum {
+    M1,
+    M2,
+    M3,
+    M4
+} Motor_Shield_Motor;
 
-// // Define an enum type variable to store the servo names and values
-// // enum motor_shield_v1_servo {S1, S2};
+// typedef enum {
+//     S1,
+//     S2,
+// } Motor_Shield_Servo;
 
 
 // Function prototypes

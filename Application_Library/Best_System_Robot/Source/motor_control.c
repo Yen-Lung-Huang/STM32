@@ -1,5 +1,11 @@
 #include "motor_control.h"
 
+#define MAX_ACCELERATION 1000
+#define MAX_ADJUSTMENT_FACTOR 0.8f
+#define MIN_ADJUSTMENT_FACTOR 0.3f
+#define STOP_ACCELERATION_FACTOR 1.5f  // Increase deceleration when stopping
+#define USE_BACK_EMF_COMPENSATION 0    // Set to 1 to enable back EMF compensation
+
 // Define default parameters for each mode
 const MotorThresholds WHEEL_THRESHOLDS[] = {
     [MOVE] = {

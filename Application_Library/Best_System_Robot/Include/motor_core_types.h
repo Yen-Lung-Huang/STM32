@@ -15,18 +15,6 @@ typedef enum {
     DIAGONAL
 } MovementMode;
 
-typedef enum {
-    MS_V1,
-    MS_L29XX
-} Motor_Shield_Type;
-
-typedef enum {
-    M1,
-    M2,
-    M3,
-    M4
-} Motor_Shield_Motor;
-
 typedef struct {
     int static_friction_threshold;
     int low_speed_threshold;
@@ -48,15 +36,6 @@ typedef struct {
     MotorThresholds thresholds;
     MovementMode mode;
 } MotorController;
-
-// // Forward declarations
-// typedef struct My_GPIO_TypeDef My_GPIO_TypeDef;
-// typedef struct PWM_TypeDef PWM_TypeDef;
-// typedef struct DC_Motor_TypeDef DC_Motor_TypeDef;
-// typedef struct Motor_Shield_V1 Motor_Shield_V1;
-// typedef struct Motor_Shield_L29XX Motor_Shield_L29XX;
-// typedef struct NonBlockingDelay_TypeDef NonBlockingDelay_TypeDef;
-// typedef struct HC595 HC595;
 
 #ifdef __cplusplus
 }

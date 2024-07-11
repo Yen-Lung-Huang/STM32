@@ -8,7 +8,7 @@ extern "C" {
 
 /* Include */
 #include "main.h"
-#include "motor_shield_v1.h"
+#include "motor_shield.h"
 #include "HC-SR04.h"
 
 #define NUM_BUTTONS 7

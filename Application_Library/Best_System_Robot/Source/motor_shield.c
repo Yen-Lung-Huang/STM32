@@ -1,4 +1,4 @@
-#include "motor_shield_v1.h"
+#include "motor_shield.h"
 
 #define DC_MOTOR_MIN 0
 #define DC_MOTOR_MAX 999

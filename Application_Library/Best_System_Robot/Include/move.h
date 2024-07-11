@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-#include "motor_shield_v1.h"
+#include "motor_shield.h"
 
 typedef enum {
     MOVE,

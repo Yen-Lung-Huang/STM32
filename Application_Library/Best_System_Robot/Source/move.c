@@ -1,41 +1,48 @@
 #include "move.h"
 
-
+// Define default parameters for each mode
+const MotorThresholds WHEEL_THRESHOLDS[] = {
+    [MOVE] = {
+        .static_friction_threshold = 500,
+        .low_speed_threshold = 375,
+        .success_count = 0,
+        .failure_count = 0,
+        .kp = 1.0f,
+        .ki = 0.1f,
+        .kd = 0.01f
+    },
+    [TURN] = {
+        .static_friction_threshold = 600,
+        .low_speed_threshold = 450,
+        .success_count = 0,
+        .failure_count = 0,
+        .kp = 1.2f,
+        .ki = 0.12f,
+        .kd = 0.015f
+    },
+    [STRAFE] = {
+        .static_friction_threshold = 600,
+        .low_speed_threshold = 450,
+        .success_count = 0,
+        .failure_count = 0,
+        .kp = 1.2f,
+        .ki = 0.12f,
+        .kd = 0.015f
+    },
+    [DIAGONAL] = {
+        .static_friction_threshold = 600,
+        .low_speed_threshold = 450,
+        .success_count = 0,
+        .failure_count = 0,
+        .kp = 1.2f,
+        .ki = 0.12f,
+        .kd = 0.015f
+    }
+};
 
 void adjust_motor_parameters(DC_Motor_TypeDef *motor, MovementMode mode)
 {
-    MotorThresholds *motor_thresholds = &motor->controller.thresholds;
-    
-    switch (mode) {
-    case MOVE:
-        motor_thresholds->static_friction_threshold = 500;
-        motor_thresholds->low_speed_threshold = 375;
-        motor_thresholds->kp = 1.0f;
-        motor_thresholds->ki = 0.1f;
-        motor_thresholds->kd = 0.01f;
-        break;
-    case TURN:
-        motor_thresholds->static_friction_threshold = 600;
-        motor_thresholds->low_speed_threshold = 450;
-        motor_thresholds->kp = 1.2f;
-        motor_thresholds->ki = 0.12f;
-        motor_thresholds->kd = 0.015f;
-        break;
-    case STRAFE:
-        motor_thresholds->static_friction_threshold = 600;
-        motor_thresholds->low_speed_threshold = 450;
-        motor_thresholds->kp = 1.2f;
-        motor_thresholds->ki = 0.12f;
-        motor_thresholds->kd = 0.015f;
-        break;
-    case DIAGONAL:
-        motor_thresholds->static_friction_threshold = 600;
-        motor_thresholds->low_speed_threshold = 450;
-        motor_thresholds->kp = 1.2f;
-        motor_thresholds->ki = 0.12f;
-        motor_thresholds->kd = 0.015f;
-        break;
-    }
+    motor->controller.thresholds = WHEEL_THRESHOLDS[mode];
 }
 
 void set_wheel_modes(MovementMode mode)

@@ -47,6 +47,7 @@ const MotorThresholds WHEEL_THRESHOLDS[] = {
 void adjust_thresholds(DC_Motor_TypeDef *motor, bool success)
 {
     MotorThresholds *motor_thresholds = &motor->controller.thresholds;
+    const MotorThresholds *initial_thresholds = &WHEEL_THRESHOLDS[motor->controller.mode];
 
     if (success) {
         motor_thresholds->success_count++;
@@ -67,8 +68,8 @@ void adjust_thresholds(DC_Motor_TypeDef *motor, bool success)
     }
 
     // Ensure thresholds do not go below initial values
-    motor_thresholds->static_friction_threshold = (motor_thresholds->static_friction_threshold < 500) ? 500 : motor_thresholds->static_friction_threshold;
-    motor_thresholds->low_speed_threshold = (motor_thresholds->low_speed_threshold < 375) ? 375 : motor_thresholds->low_speed_threshold;
+    motor_thresholds->static_friction_threshold = (motor_thresholds->static_friction_threshold < initial_thresholds->static_friction_threshold) ? initial_thresholds->static_friction_threshold : motor_thresholds->static_friction_threshold;
+    motor_thresholds->low_speed_threshold = (motor_thresholds->low_speed_threshold < initial_thresholds->low_speed_threshold) ? initial_thresholds->low_speed_threshold : motor_thresholds->low_speed_threshold;
 }
 
 

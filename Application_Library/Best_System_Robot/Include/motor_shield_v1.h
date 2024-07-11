@@ -11,6 +11,7 @@ extern "C" {
 #include "servo.h"
 #include "74HC595.h"
 #include "timing_delays.h"
+#include "motor_controller.h"
 
 /* MACRO DEFINITIONS */
 
@@ -30,31 +31,15 @@ typedef struct {
     int32_t count;      // Encoder count
 } Encoder_TypeDef;
 
-// Define a structure for Motor Thresholds and PID parameters
-typedef struct {
-    int static_friction_threshold;
-    int low_speed_threshold;
-    int success_count;
-    int failure_count;
-    float kp;
-    float ki;
-    float kd;
-} MotorThresholds;
-
+// Define a structure for DC Motor
 typedef struct {
     My_GPIO_TypeDef IN1;           // GPIO for IN1 pin
     My_GPIO_TypeDef IN2;           // GPIO for IN2 pin
     DC_Motor_EN_TypeDef EN;        // Enable signal for DC motor
-    int target_speed;              // Range -999 to 999, negative value means reverse
-    int current_speed;             // Current speed of the motor
-    bool static_friction_overcome; // Flag indicating if static friction has been overcome
+    MotorController controller;    // Motor controller
     bool reverse;                  // Reverse the motor direction
     Encoder_TypeDef encoder;       // Encoder structure
     bool has_encoder;              // Flag indicating if encoder exists
-    float integral_error;          // Integral error for PID control
-    float previous_error;          // Previous error for PID control
-    uint32_t last_update_time;     // Time of the last update for dt calculation
-    MotorThresholds thresholds;    // Motor thresholds and PID parameters
 } DC_Motor_TypeDef;
 
 // Define a structure for Motor_Shield_V1

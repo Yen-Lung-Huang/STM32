@@ -207,7 +207,7 @@ void set_motor_speed(void *motor_shield, enum Motor_Shield_Type type, uint8_t dc
     // Get the DC motor object
     DC_Motor_TypeDef *motor = get_dc_motor(motor_shield, type, dc_motor_number);
     if (motor != NULL) {
-        motor->target_speed = target_speed;
+        motor->controller.target_speed = target_speed;
     }
 }
 
@@ -295,31 +295,32 @@ void ms_v1_servo_control(Motor_Shield_V1 *motor_shield, uint8_t servo_number, fl
 
 /* Soft Motor Control ---------------------------------------------------------------*/
 
-
 // Define a function to adjust the motor thresholds
 void adjust_thresholds(DC_Motor_TypeDef *motor, bool success)
 {
+    MotorThresholds *motor_thresholds = &motor->controller.thresholds;
+
     if (success) {
-        motor->thresholds.success_count++;
-        motor->thresholds.failure_count = 0;
-        if (motor->thresholds.success_count > 5) {
-            motor->thresholds.static_friction_threshold -= 10;
-            motor->thresholds.low_speed_threshold -= 5;
-            motor->thresholds.success_count = 0;
+        motor_thresholds->success_count++;
+        motor_thresholds->failure_count = 0;
+        if (motor_thresholds->success_count > 5) {
+            motor_thresholds->static_friction_threshold -= 10;
+            motor_thresholds->low_speed_threshold -= 5;
+            motor_thresholds->success_count = 0;
         }
     } else {
-        motor->thresholds.failure_count++;
-        motor->thresholds.success_count = 0;
-        if (motor->thresholds.failure_count > 3) {
-            motor->thresholds.static_friction_threshold += 10;
-            motor->thresholds.low_speed_threshold += 5;
-            motor->thresholds.failure_count = 0;
+        motor_thresholds->failure_count++;
+        motor_thresholds->success_count = 0;
+        if (motor_thresholds->failure_count > 3) {
+            motor_thresholds->static_friction_threshold += 10;
+            motor_thresholds->low_speed_threshold += 5;
+            motor_thresholds->failure_count = 0;
         }
     }
 
     // Ensure thresholds do not go below initial values
-    motor->thresholds.static_friction_threshold = (motor->thresholds.static_friction_threshold < 500) ? 500 : motor->thresholds.static_friction_threshold;
-    motor->thresholds.low_speed_threshold = (motor->thresholds.low_speed_threshold < 375) ? 375 : motor->thresholds.low_speed_threshold;
+    motor_thresholds->static_friction_threshold = (motor_thresholds->static_friction_threshold < 500) ? 500 : motor_thresholds->static_friction_threshold;
+    motor_thresholds->low_speed_threshold = (motor_thresholds->low_speed_threshold < 375) ? 375 : motor_thresholds->low_speed_threshold;
 }
 
 
@@ -332,75 +333,76 @@ void soft_motor_control(void *motor_shield, enum Motor_Shield_Type type, uint8_t
         return;
     }
 
-    MotorThresholds *mt = &motor->thresholds;
+    MotorController *motor_ctrl = &motor->controller;
+    MotorThresholds *motor_thresholds = &motor_ctrl->thresholds;
     target_speed = (target_speed > DC_MOTOR_MAX) ? DC_MOTOR_MAX : (target_speed < -DC_MOTOR_MAX ? -DC_MOTOR_MAX : target_speed);
-    motor->target_speed = target_speed;
+    motor_ctrl->target_speed = target_speed;
 
     uint32_t current_time = HAL_GetTick();
 
     if (motor->EN.soft_control_delay.IsExpired(&motor->EN.soft_control_delay)) {
-        float dt = (current_time - motor->last_update_time) / 1000.0f;
-        int speed_diff = motor->target_speed - motor->current_speed;
+        float dt = (current_time - motor_ctrl->last_update_time) / 1000.0f;
+        int speed_diff = motor_ctrl->target_speed - motor_ctrl->current_speed;
 
         // PID control
-        motor->integral_error += speed_diff * dt;
-        float derivative = (speed_diff - motor->previous_error) / dt;
-        float pid_output = mt->kp * speed_diff + mt->ki * motor->integral_error + mt->kd * derivative;
+        motor_ctrl->integral_error += speed_diff * dt;
+        float derivative = (speed_diff - motor_ctrl->previous_error) / dt;
+        float pid_output = motor_thresholds->kp * speed_diff + motor_thresholds->ki * motor_ctrl->integral_error + motor_thresholds->kd * derivative;
 
         if (target_speed == 0) {
             // Faster stopping logic
             float stop_deceleration = MAX_ACCELERATION * STOP_ACCELERATION_FACTOR * dt;
-            if (abs(motor->current_speed) > mt->low_speed_threshold) {
-                motor->current_speed -= (motor->current_speed > 0) ? stop_deceleration : -stop_deceleration;
-                if (abs(motor->current_speed) < mt->low_speed_threshold) {
-                    motor->current_speed = 0;
+            if (abs(motor_ctrl->current_speed) > motor_thresholds->low_speed_threshold) {
+                motor_ctrl->current_speed -= (motor_ctrl->current_speed > 0) ? stop_deceleration : -stop_deceleration;
+                if (abs(motor_ctrl->current_speed) < motor_thresholds->low_speed_threshold) {
+                    motor_ctrl->current_speed = 0;
                 }
             } else {
-                motor->current_speed = 0;
+                motor_ctrl->current_speed = 0;
             }
-            motor->static_friction_overcome = false;
+            motor_ctrl->static_friction_overcome = false;
         } else {
-            int effective_target_speed = (abs(target_speed) < mt->low_speed_threshold) ?
-                                         (target_speed > 0 ? mt->low_speed_threshold : -mt->low_speed_threshold) : target_speed;
+            int effective_target_speed = (abs(target_speed) < motor_thresholds->low_speed_threshold) ?
+                                         (target_speed > 0 ? motor_thresholds->low_speed_threshold : -motor_thresholds->low_speed_threshold) : target_speed;
 
-            if (motor->current_speed * effective_target_speed < 0) {
+            if (motor_ctrl->current_speed * effective_target_speed < 0) {
                 // Handle direction change
                 float direction_change_deceleration = MAX_ACCELERATION * dt;
-                motor->current_speed -= (motor->current_speed > 0) ? direction_change_deceleration : -direction_change_deceleration;
-                if (abs(motor->current_speed) < mt->low_speed_threshold) {
-                    motor->current_speed = 0;
-                    motor->static_friction_overcome = false;
+                motor_ctrl->current_speed -= (motor_ctrl->current_speed > 0) ? direction_change_deceleration : -direction_change_deceleration;
+                if (abs(motor_ctrl->current_speed) < motor_thresholds->low_speed_threshold) {
+                    motor_ctrl->current_speed = 0;
+                    motor_ctrl->static_friction_overcome = false;
                 }
             } else {
-                if (!motor->static_friction_overcome || abs(motor->current_speed) < mt->low_speed_threshold) {
-                    motor->current_speed = (effective_target_speed > 0) ? mt->static_friction_threshold : -mt->static_friction_threshold;
-                    motor->static_friction_overcome = true;
+                if (!motor_ctrl->static_friction_overcome || abs(motor_ctrl->current_speed) < motor_thresholds->low_speed_threshold) {
+                    motor_ctrl->current_speed = (effective_target_speed > 0) ? motor_thresholds->static_friction_threshold : -motor_thresholds->static_friction_threshold;
+                    motor_ctrl->static_friction_overcome = true;
                 } else {
-                    float speed_ratio = (float)abs(motor->current_speed) / DC_MOTOR_MAX;
+                    float speed_ratio = (float)abs(motor_ctrl->current_speed) / DC_MOTOR_MAX;
                     float adjustment_factor = MAX_ADJUSTMENT_FACTOR - speed_ratio * (MAX_ADJUSTMENT_FACTOR - MIN_ADJUSTMENT_FACTOR);
 
-                    adjustment_factor *= (abs(effective_target_speed) > abs(motor->current_speed)) ? 1.2f : 0.8f;
+                    adjustment_factor *= (abs(effective_target_speed) > abs(motor_ctrl->current_speed)) ? 1.2f : 0.8f;
 
-                    int speed_change = (int)((pid_output + effective_target_speed - motor->current_speed) * adjustment_factor);
+                    int speed_change = (int)((pid_output + effective_target_speed - motor_ctrl->current_speed) * adjustment_factor);
                     int max_speed_change = MAX_ACCELERATION * dt;
 
                     speed_change = (abs(speed_change) > max_speed_change) ?
                                    ((speed_change > 0) ? max_speed_change : -max_speed_change) : speed_change;
 
-                    motor->current_speed += speed_change;
+                    motor_ctrl->current_speed += speed_change;
 
-                    if ((speed_diff > 0 && motor->current_speed > effective_target_speed) ||
-                            (speed_diff < 0 && motor->current_speed < effective_target_speed)) {
-                        motor->current_speed = effective_target_speed;
+                    if ((speed_diff > 0 && motor_ctrl->current_speed > effective_target_speed) ||
+                            (speed_diff < 0 && motor_ctrl->current_speed < effective_target_speed)) {
+                        motor_ctrl->current_speed = effective_target_speed;
                     }
                 }
             }
         }
 
-        float motor_input = (float)motor->current_speed / DC_MOTOR_MAX;
+        float motor_input = (float)motor_ctrl->current_speed / DC_MOTOR_MAX;
 
 #if USE_BACK_EMF_COMPENSATION
-        float back_emf = mt->k_back_emf * motor->current_speed;
+        float back_emf = motor_thresholds->k_back_emf * motor->current_speed;
         motor_input += back_emf;
 #endif
 
@@ -408,12 +410,12 @@ void soft_motor_control(void *motor_shield, enum Motor_Shield_Type type, uint8_t
 
         ms_motor_control(motor_shield, type, dc_motor_number, motor_input);
 
-        motor->previous_error = speed_diff;
-        motor->last_update_time = current_time;
+        motor_ctrl->previous_error = speed_diff;
+        motor_ctrl->last_update_time = current_time;
         motor->EN.soft_control_delay.Start(&motor->EN.soft_control_delay, 1);
 
         // Update performance (this is where we would ideally use encoder feedback)
-        bool moved_as_expected = abs(motor->current_speed - target_speed) < mt->low_speed_threshold;
+        bool moved_as_expected = abs(motor_ctrl->current_speed - target_speed) < motor_thresholds->low_speed_threshold;
         adjust_thresholds(motor, moved_as_expected);
     }
 }

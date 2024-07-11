@@ -18,7 +18,7 @@ void core_loop(void)
     // UpdateRoboticArmState();
 
     for (uint8_t i = M1; i <= M4; i++) {
-        soft_motor_control(&motor_shield_l29xx, MS_L29XX, i, get_dc_motor(&motor_shield_l29xx, MS_L29XX, i)->target_speed);
+        soft_motor_control(&motor_shield_l29xx, MS_L29XX, i, get_dc_motor(&motor_shield_l29xx, MS_L29XX, i)->controller.target_speed);
     }
 }
 

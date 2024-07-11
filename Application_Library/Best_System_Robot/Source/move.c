@@ -4,34 +4,36 @@
 
 void adjust_motor_parameters(DC_Motor_TypeDef *motor, MovementMode mode)
 {
+    MotorThresholds *motor_thresholds = &motor->controller.thresholds;
+    
     switch (mode) {
     case MOVE:
-        motor->thresholds.static_friction_threshold = 500;
-        motor->thresholds.low_speed_threshold = 375;
-        motor->thresholds.kp = 1.0f;
-        motor->thresholds.ki = 0.1f;
-        motor->thresholds.kd = 0.01f;
+        motor_thresholds->static_friction_threshold = 500;
+        motor_thresholds->low_speed_threshold = 375;
+        motor_thresholds->kp = 1.0f;
+        motor_thresholds->ki = 0.1f;
+        motor_thresholds->kd = 0.01f;
         break;
     case TURN:
-        motor->thresholds.static_friction_threshold = 600;
-        motor->thresholds.low_speed_threshold = 450;
-        motor->thresholds.kp = 1.2f;
-        motor->thresholds.ki = 0.12f;
-        motor->thresholds.kd = 0.015f;
+        motor_thresholds->static_friction_threshold = 600;
+        motor_thresholds->low_speed_threshold = 450;
+        motor_thresholds->kp = 1.2f;
+        motor_thresholds->ki = 0.12f;
+        motor_thresholds->kd = 0.015f;
         break;
     case STRAFE:
-        motor->thresholds.static_friction_threshold = 600;
-        motor->thresholds.low_speed_threshold = 450;
-        motor->thresholds.kp = 1.2f;
-        motor->thresholds.ki = 0.12f;
-        motor->thresholds.kd = 0.015f;
+        motor_thresholds->static_friction_threshold = 600;
+        motor_thresholds->low_speed_threshold = 450;
+        motor_thresholds->kp = 1.2f;
+        motor_thresholds->ki = 0.12f;
+        motor_thresholds->kd = 0.015f;
         break;
     case DIAGONAL:
-        motor->thresholds.static_friction_threshold = 600;
-        motor->thresholds.low_speed_threshold = 450;
-        motor->thresholds.kp = 1.2f;
-        motor->thresholds.ki = 0.12f;
-        motor->thresholds.kd = 0.015f;
+        motor_thresholds->static_friction_threshold = 600;
+        motor_thresholds->low_speed_threshold = 450;
+        motor_thresholds->kp = 1.2f;
+        motor_thresholds->ki = 0.12f;
+        motor_thresholds->kd = 0.015f;
         break;
     }
 }

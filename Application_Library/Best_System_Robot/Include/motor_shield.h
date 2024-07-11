@@ -11,9 +11,16 @@ extern "C" {
 #include "servo.h"
 #include "74HC595.h"
 #include "timing_delays.h"
-#include "motor_controller.h"
+#include "motor_types.h"
 
 /* MACRO DEFINITIONS */
+#define DC_MOTOR_MIN 0
+#define DC_MOTOR_MAX 999
+#define MAX_ACCELERATION 1000
+#define MAX_ADJUSTMENT_FACTOR 0.8f
+#define MIN_ADJUSTMENT_FACTOR 0.3f
+#define STOP_ACCELERATION_FACTOR 1.5f  // Increase deceleration when stopping
+#define USE_BACK_EMF_COMPENSATION 0    // Set to 1 to enable back EMF compensation
 
 
 // Define a structure for EN pin
@@ -68,37 +75,32 @@ typedef struct {
 } L29XX;
 
 
-// Declare the global objects with extern keyword
+// Declare global objects
 extern Motor_Shield_V1 motor_shield_v1;
 extern Motor_Shield_L29XX motor_shield_l29xx;
 
-// Define an enum type to indicate the type of motor shield
-enum Motor_Shield_Type {MS_V1, MS_L29XX};
+// // Define an enum type to indicate the type of motor shield
+// enum Motor_Shield_Type {MS_V1, MS_L29XX};
 
-// Define an enum type variable to store the motor names and values
-enum Motor_Shield_Motor {M1, M2, M3, M4};
+// // Define an enum type variable to store the motor names and values
+// enum Motor_Shield_Motor {M1, M2, M3, M4};
 
-// Define an enum type variable to store the servo names and values
-// enum motor_shield_v1_servo {S1, S2};
+// // Define an enum type variable to store the servo names and values
+// // enum motor_shield_v1_servo {S1, S2};
 
 
-/* FUNCTION (Prototype) DEFINITIONS */
-DC_Motor_TypeDef *get_dc_motor(void *motor_shield, enum Motor_Shield_Type type, uint8_t dc_motor_number);
-
-void ms_init(enum Motor_Shield_Type type, bool enable_pwm);
+// Function prototypes
+void ms_init(Motor_Shield_Type type, bool enable_pwm);
 void init_motor_shield_v1();
 void init_motor_shield_l29xx();
-void ms_pwm_init(enum Motor_Shield_Type type);
-void ms_gpio_init(enum Motor_Shield_Type type);
-void ms_encoder_init(enum Motor_Shield_Type type);
-
+void ms_pwm_init(Motor_Shield_Type type);
+void ms_gpio_init(Motor_Shield_Type type);
+void ms_encoder_init(Motor_Shield_Type type);
+DC_Motor_TypeDef *get_dc_motor(void *motor_shield, Motor_Shield_Type type, uint8_t dc_motor_number);
 uint8_t get_motor_bit(uint8_t dc_motor_number, uint8_t bit_index);
-void set_motor_speed(void *motor_shield, enum Motor_Shield_Type type, uint8_t dc_motor_number, int target_speed);
-
-void ms_motor_control(void *motor_shield, enum Motor_Shield_Type type, uint8_t dc_motor_number, float motor_input);
+void set_motor_speed(void *motor_shield, Motor_Shield_Type type, uint8_t dc_motor_number, int target_speed);
+void ms_motor_control(void *motor_shield, Motor_Shield_Type type, uint8_t dc_motor_number, float motor_input);
 void ms_v1_servo_control(Motor_Shield_V1 *motor_shield, uint8_t servo_number, float servo_input, bool mode);
-void soft_motor_control(void *motor_shield, enum Motor_Shield_Type type, uint8_t dc_motor_number, int target_speed);
-
 
 #ifdef __cplusplus
 }

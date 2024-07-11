@@ -15,7 +15,7 @@ extern "C" {
 #include "servo.h"
 #include "74HC595.h"
 #include "motor_shield.h"
-#include "move.h"
+#include "motor_control.h"
 #include "sensor.h"
 #include "robotic_arm.h"
 

@@ -616,14 +616,9 @@
               <FilePath>..\..\..\..\..\Application_Library\Best_System_Robot\Source\motor_shield.c</FilePath>
             </File>
             <File>
-              <FileName>motor_controller.c</FileName>
+              <FileName>motor_control.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\..\Application_Library\Best_System_Robot\Source\motor_controller.c</FilePath>
-            </File>
-            <File>
-              <FileName>move.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\..\..\Application_Library\Best_System_Robot\Source\move.c</FilePath>
+              <FilePath>..\..\..\..\..\Application_Library\Best_System_Robot\Source\motor_control.c</FilePath>
             </File>
             <File>
               <FileName>servo.c</FileName>

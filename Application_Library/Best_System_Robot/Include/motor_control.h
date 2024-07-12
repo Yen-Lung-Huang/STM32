@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "motor_core_types.h"
+#include "motor_amr_defs.h"
 #include "motor_shield.h"
 
 extern const MotorThresholds WHEEL_THRESHOLDS[];

@@ -1,5 +1,5 @@
-#ifndef MOTOR_TYPES_H
-#define MOTOR_TYPES_H
+#ifndef MOTOR_AMR_DEFS_H
+#define MOTOR_AMR_DEFS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,4 +41,4 @@ typedef struct {
 }
 #endif
 
-#endif /* MOTOR_TYPES_H */
+#endif /* MOTOR_AMR_DEFS_H */

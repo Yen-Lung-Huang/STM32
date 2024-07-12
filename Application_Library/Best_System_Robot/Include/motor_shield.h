@@ -11,7 +11,7 @@ extern "C" {
 #include "servo.h"
 #include "74HC595.h"
 #include "timing_delays.h"
-#include "motor_core_types.h"
+#include "motor_amr_defs.h"
 
 /* MACRO DEFINITIONS */
 #define DC_MOTOR_MIN 0

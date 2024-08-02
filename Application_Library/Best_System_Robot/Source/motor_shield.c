@@ -194,7 +194,7 @@ void set_motor_speed(void *motor_shield, Motor_Shield_Type type, uint8_t dc_moto
 {
     // Limit the speed range
     target_speed = (target_speed > DC_MOTOR_MAX) ? DC_MOTOR_MAX : ((target_speed < -DC_MOTOR_MAX) ? -DC_MOTOR_MAX : target_speed);
-
+    
     // Get the DC motor object
     DC_Motor_TypeDef *motor = get_dc_motor(motor_shield, type, dc_motor_number);
     if (motor != NULL) {

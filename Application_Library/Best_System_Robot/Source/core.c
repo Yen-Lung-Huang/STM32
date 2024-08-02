@@ -118,6 +118,7 @@ bool json_action(char *JSON_STRING, uint16_t token_size) // sizeof(char)*strlen(
                 set_wheel_speeds(speed, speed, speed, speed);
                 printf("Move: %.2f\r\n", speed);
             } else if (cJSON_IsString(token) && !strcmp(token->valuestring, "stop")) {
+                set_wheel_modes(MOVE);
                 set_wheel_speeds(0, 0, 0, 0);
                 printf("Stopping all wheels\r\n");
             } else {
@@ -126,6 +127,7 @@ bool json_action(char *JSON_STRING, uint16_t token_size) // sizeof(char)*strlen(
         }  else if (!strcmp(token->string, "turn")) {
             if (cJSON_IsNumber(token)) {
                 float speed = token->valueint;
+                set_wheel_modes(TURN);
                 set_wheel_speeds(speed, -speed, speed, -speed);
                 printf("Turn: %.2f\r\n", speed);
             } else {
@@ -134,6 +136,7 @@ bool json_action(char *JSON_STRING, uint16_t token_size) // sizeof(char)*strlen(
         } else if (!strcmp(token->string, "strafe")) {
             if (cJSON_IsNumber(token)) {
                 float speed = token->valueint;
+                set_wheel_modes(STRAFE);
                 set_wheel_speeds(speed, -speed, -speed, speed);
                 printf("Strafe: %.2f\r\n", speed);
             } else {
@@ -146,6 +149,7 @@ bool json_action(char *JSON_STRING, uint16_t token_size) // sizeof(char)*strlen(
                 if (speed_item && direction_item && cJSON_IsNumber(speed_item) && cJSON_IsNumber(direction_item)) {
                     float speed = speed_item->valueint;
                     int direction = direction_item->valueint;
+                    set_wheel_modes(DIAGONAL);
                     if (direction > 0) {
                         set_wheel_speeds(speed, 0, 0, speed);  // right front
                     } else {

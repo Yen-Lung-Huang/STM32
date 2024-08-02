@@ -97,8 +97,8 @@ int main(void)
   MX_TIM21_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
-    HAL_UARTEx_ReceiveToIdle_DMA(&huart2, RxBuf, RxBuf_SIZE);
-    __HAL_DMA_DISABLE_IT(&hdma_usart2_rx, DMA_IT_HT);
+  HAL_UARTEx_ReceiveToIdle_DMA(&huart2, RxBuf, RxBuf_SIZE);
+  __HAL_DMA_DISABLE_IT(&hdma_usart2_rx, DMA_IT_HT);
   /* USER CODE END 2 */
 
   /* Infinite loop */

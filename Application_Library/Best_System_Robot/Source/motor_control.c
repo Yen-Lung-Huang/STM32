@@ -19,7 +19,7 @@ const MotorThresholds WHEEL_THRESHOLDS[] = {
     },
     [TURN] = {
         .static_friction_threshold = 600,
-        .low_speed_threshold = 450,
+        .low_speed_threshold = 600,
         .success_count = 0,
         .failure_count = 0,
         .kp = 1.2f,

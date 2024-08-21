@@ -45,6 +45,9 @@ void HandleSortAndDropState(void);
 void HandleStoreShuttlecockState(void);
 void HandleStopState(void);
 
+bool CheckBucketFull(bool defect_result);
+void RotateWheel(bool defect_result);
+
 
 #ifdef __cplusplus
 }

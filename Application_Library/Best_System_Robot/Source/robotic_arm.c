@@ -24,16 +24,13 @@ void CheckButtonsAndStopMotors(void)
     }
 }
 
-
 /* Robotic Arm Configuration---------------------------------------*/
 
 RoboticArmState_TypeDef roboticArmState = STATE_INIT;
 NonBlockingDelay_TypeDef myDelay;
 
 bool defect_result_received = false; // Flag to indicate if defect result is received
-bool defect_result = false; // Variable to store the defect result
-
-
+bool defect_result = false;          // Variable to store the defect result
 
 void UpdateRoboticArmState(void)
 {
@@ -87,10 +84,11 @@ void HandleInitState(void)
         ms_motor_control(&motor_shield_v1, MS_V1, M1, -1000); // Move the carriage until button B2 is pressed
     } else {
         ms_motor_control(&motor_shield_v1, MS_V1, M1, 0); // Stop the carriage movement
-        myDelay.Start(&myDelay, 200); // Start a non-blocking delay of 200 ms to allow the arm to stabilize
+        myDelay.Start(&myDelay, 200);                     // Start a non-blocking delay of 200 ms to allow the arm to stabilize
     }
 
-    if (myDelay.IsExpired(&myDelay)) { // Check if the delay has expired
+    if (myDelay.IsExpired(&myDelay)) {
+        // Check if the delay has expired
         roboticArmState = STATE_MOVE_TO_GRAB; // Transition to the next state
     }
 }
@@ -100,12 +98,13 @@ void HandleMoveToGrabState(void)
     if (!myDelay.active) {
         if (Button_IsPressed(&button[B1])) {
             ms_motor_control(&motor_shield_v1, MS_V1, M1, 0); // Stop Motor M1
-            myDelay.Start(&myDelay, 200); // Start a non-blocking delay of 200 ms to allow the arm to stabilize
+            myDelay.Start(&myDelay, 200);                     // Start a non-blocking delay of 200 ms to allow the arm to stabilize
         } else {
             ms_motor_control(&motor_shield_v1, MS_V1, M1, 1000); // Move the carriage forward
         }
     } else {
-        if (myDelay.IsExpired(&myDelay)) { // Check if the delay has expired
+        if (myDelay.IsExpired(&myDelay)) {
+            // Check if the delay has expired
             roboticArmState = STATE_GRAB_SHUTTLECOCK; // Transition to the next state
         }
     }
@@ -115,9 +114,10 @@ void HandleGrabShuttlecockState(void)
 {
     if (!myDelay.active) {
         servo_control(&servo[S3], 0, ANGLE, true); // Close the gripper
-        myDelay.Start(&myDelay, 100); // Start a non-blocking delay of 100 ms to ensure the gripper is fully closed
+        myDelay.Start(&myDelay, 100);              // Start a non-blocking delay of 100 ms to ensure the gripper is fully closed
     } else {
-        if (myDelay.IsExpired(&myDelay)) { // Check if the delay has expired
+        if (myDelay.IsExpired(&myDelay)) {
+            // Check if the delay has expired
             roboticArmState = STATE_MOVE_TO_SCAN; // Transition to the next state
         }
     }
@@ -128,14 +128,15 @@ void HandleMoveToScanState(void)
     if (!myDelay.active) {
         if (Button_IsPressed(&button[B2])) {
             ms_motor_control(&motor_shield_v1, MS_V1, M1, 0); // Stop Motor M1
-            servo_control(&servo[S2], 10, ANGLE, true); // Set Servo S2 to 10 degrees
-            servo_control(&servo[S1], 15, ANGLE, true); // Set Servo S1 to 15 degrees
-            myDelay.Start(&myDelay, 100); // Start a non-blocking delay of 100 ms to ensure the servo reaches the scanning position
+            servo_control(&servo[S2], 10, ANGLE, true);       // Set Servo S2 to 10 degrees
+            servo_control(&servo[S1], 15, ANGLE, true);       // Set Servo S1 to 15 degrees
+            myDelay.Start(&myDelay, 100);                     // Start a non-blocking delay of 100 ms to ensure the servo reaches the scanning position
         } else {
             ms_motor_control(&motor_shield_v1, MS_V1, M1, -1000); // Move the carriage backward
         }
     } else {
-        if (myDelay.IsExpired(&myDelay)) { // Check if the delay has expired
+        if (myDelay.IsExpired(&myDelay)) {
+            // Check if the delay has expired
             roboticArmState = STATE_WAIT_FOR_SCAN; // Transition to the next state
         }
     }
@@ -144,11 +145,12 @@ void HandleMoveToScanState(void)
 void HandleWaitForScanState(void)
 {
     if (!myDelay.active) {
-        defect_result_received = false; // Reset the defect result flag
+        defect_result_received = false;          // Reset the defect result flag
         printf("{\"request\":\"scan_defect\"}"); // Send scan request to RPi
-        myDelay.Start(&myDelay, 1000); // Start a non-blocking delay to wait for the RPi response
+        myDelay.Start(&myDelay, 1000);           // Start a non-blocking delay to wait for the RPi response
     } else {
-        if (myDelay.IsExpired(&myDelay)) { // Check if the delay has expired
+        if (myDelay.IsExpired(&myDelay)) {
+            // Check if the delay has expired
             roboticArmState = STATE_SORT_AND_DROP; // Transition to the next state
         }
     }
@@ -156,13 +158,15 @@ void HandleWaitForScanState(void)
 
 void HandleSortAndDropState(void)
 {
-    if (defect_result_received) { // Check if the defect result is received
+    if (defect_result_received) {
+        // Check if the defect result is received
         if (!myDelay.active) {
             servo_control(&servo[S1], defect_result ? -65 : 65, ANGLE, true); // Sort Shuttlecock by setting Servo S1 to -65 or 65 degrees
-            servo_control(&servo[S3], 10, ANGLE, true); // Open the gripper to drop the shuttlecock
-            myDelay.Start(&myDelay, 1000); // Start a non-blocking delay of 1000 ms to ensure the shuttlecock is dropped
+            servo_control(&servo[S3], 10, ANGLE, true);                       // Open the gripper to drop the shuttlecock
+            myDelay.Start(&myDelay, 1000);                                    // Start a non-blocking delay of 1000 ms to ensure the shuttlecock is dropped
         } else {
-            if (myDelay.IsExpired(&myDelay)) { // Check if the delay has expired
+            if (myDelay.IsExpired(&myDelay)) {
+                // Check if the delay has expired
                 roboticArmState = STATE_STORE_SHUTTLECOCK; // Transition to the next state
             }
         }
@@ -174,18 +178,21 @@ void HandleStoreShuttlecockState(void)
     static int check_count = 0; // Add a counter to track the number of checks
 
     if (!myDelay.active) {
-        if (CheckBucketFull(defect_result)) { // Check if the bucket is full
-            RotateWheel(defect_result); // Rotate the wheel to the next cylinder
+        if (CheckBucketFull(defect_result)) {
+            // Check if the bucket is full
+            RotateWheel(defect_result);    // Rotate the wheel to the next cylinder
             myDelay.Start(&myDelay, 1000); // Start a non-blocking delay to ensure the wheel rotation
             check_count++;
         } else {
             ms_motor_control(&motor_shield_v1, MS_V1, M2, defect_result ? 1000 : -1000); // Push the shuttlecock into the cylinder
-            myDelay.Start(&myDelay, 1000); // Start a non-blocking delay to ensure the shuttlecock is pushed
-            check_count = 0; // Reset the counter if a non-full cylinder is found
+            myDelay.Start(&myDelay, 1000);                                               // Start a non-blocking delay to ensure the shuttlecock is pushed
+            check_count = 0;                                                             // Reset the counter if a non-full cylinder is found
         }
     } else {
-        if (myDelay.IsExpired(&myDelay)) { // Check if the delay has expired
-            if (check_count >= 5) { // If all cylinders are full after 5 checks
+        if (myDelay.IsExpired(&myDelay)) {
+            // Check if the delay has expired
+            if (check_count >= 5) {
+                // If all cylinders are full after 5 checks
                 roboticArmState = STATE_STOP; // Transition to the stop state
             } else {
                 roboticArmState = STATE_INIT; // Transition to the initial state
@@ -196,10 +203,57 @@ void HandleStoreShuttlecockState(void)
 
 void HandleStopState(void)
 {
-    all_pwm_stop(); // Stop all PWM signals
+    all_pwm_stop();                                   // Stop all PWM signals
     ms_motor_control(&motor_shield_v1, MS_V1, M1, 0); // Stop Motor M1
     ms_motor_control(&motor_shield_v1, MS_V1, M2, 0); // Stop Motor M2
     ms_motor_control(&motor_shield_v1, MS_V1, M3, 0); // Stop Motor M3
     ms_motor_control(&motor_shield_v1, MS_V1, M4, 0); // Stop Motor M4
     // Stay in STOP state until further instructions
+}
+
+bool CheckBucketFull(bool defect_result)
+{
+    // Use HCSR04 ultrasonic sensor to check if the bucket is full
+    // Determine whether to check the good bucket or the bad bucket based on defect_result
+    // Use hc_sr04[1].distance and hc_sr04[2].distance to get the distance
+
+    float distance;
+    if (defect_result) {
+        // Check the good bucket
+        distance = hc_sr04[1].distance;
+    } else {
+        // Check the bad bucket
+        distance = hc_sr04[2].distance;
+    }
+
+    // Assume that a distance less than a certain threshold (e.g., 5 cm) indicates the bucket is full
+    if (distance < 5.0) {
+        return true; // Bucket is full
+    } else {
+        return false; // Bucket is not full
+    }
+}
+
+void RotateWheel(bool defect_result)
+{
+    // Determine whether to rotate to the next good bucket or bad bucket based on defect_result
+    // Use ms_motor_control() to control the motor
+
+    if (defect_result) {
+        // Use a non-blocking delay to wait until button B5 is pressed
+        if (!Button_IsPressed(&button[B6]) || Button_IsPressed(&button[B5])) {
+            ms_motor_control(&motor_shield_v1, MS_V1, M3, 0); // Stop Motor M3
+        } else {
+            // Rotate to the next good bucket position
+            ms_motor_control(&motor_shield_v1, MS_V1, M3, 1000); // Rotate Motor M3
+        }
+    } else {
+        // Use a non-blocking delay to wait until button B6 is pressed
+        if (!Button_IsPressed(&button[B5]) || Button_IsPressed(&button[B6])) {
+            ms_motor_control(&motor_shield_v1, MS_V1, M4, 0); // Stop Motor M4
+        } else {
+            // Rotate to the next bad bucket position
+            ms_motor_control(&motor_shield_v1, MS_V1, M4, 1000); // Rotate Motor M4
+        }
+    }
 }

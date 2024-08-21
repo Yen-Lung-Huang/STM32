@@ -176,23 +176,23 @@ void HandleSortAndDropState(void)
 void HandleStoreShuttlecockState(void)
 {
     static int check_count = 0; // Add a counter to track the number of checks
+    bool skip_check = true; // Set this to true to skip the bucket full check
 
     if (!myDelay.active) {
-        if (CheckBucketFull(defect_result)) {
-            // Check if the bucket is full
-            RotateWheel(defect_result);    // Rotate the wheel to the next cylinder
+        if (skip_check || !CheckBucketFull(defect_result)) {
+            // Skip the bucket full check or if the bucket is not full
+            ms_motor_control(&motor_shield_v1, MS_V1, M2, defect_result ? 1000 : -1000); // Push the shuttlecock into the cylinder
+            myDelay.Start(&myDelay, 1000); // Start a non-blocking delay to ensure the shuttlecock is pushed
+            check_count = 0; // Reset the counter if a non-full cylinder is found
+        } else {
+            // If the bucket is full
+            RotateWheel(defect_result); // Rotate the wheel to the next cylinder
             myDelay.Start(&myDelay, 1000); // Start a non-blocking delay to ensure the wheel rotation
             check_count++;
-        } else {
-            ms_motor_control(&motor_shield_v1, MS_V1, M2, defect_result ? 1000 : -1000); // Push the shuttlecock into the cylinder
-            myDelay.Start(&myDelay, 1000);                                               // Start a non-blocking delay to ensure the shuttlecock is pushed
-            check_count = 0;                                                             // Reset the counter if a non-full cylinder is found
         }
     } else {
-        if (myDelay.IsExpired(&myDelay)) {
-            // Check if the delay has expired
-            if (check_count >= 5) {
-                // If all cylinders are full after 5 checks
+        if (myDelay.IsExpired(&myDelay)) { // Check if the delay has expired
+            if (check_count >= 5) { // If all cylinders are full after 5 checks
                 roboticArmState = STATE_STOP; // Transition to the stop state
             } else {
                 roboticArmState = STATE_INIT; // Transition to the initial state

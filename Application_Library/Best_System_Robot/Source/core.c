@@ -280,6 +280,22 @@ bool json_action(char *JSON_STRING, uint16_t token_size) // sizeof(char)*strlen(
             }
         }
 
+        else if (!strcmp(token->string, "arm")) {
+            if (cJSON_IsString(token)) {
+                if (!strcmp(token->valuestring, "STATE_INIT")) {
+                    roboticArmState = STATE_INIT;
+                    printf("Robotic arm state set to INIT\r\n");
+                } else if (!strcmp(token->valuestring, "STATE_STOP")) {
+                    roboticArmState = STATE_STOP;
+                    printf("Robotic arm state set to STOP\r\n");
+                } else {
+                    printf("Invalid arm state\r\n");
+                }
+            } else {
+                printf("Invalid arm state value\r\n");
+            }
+        }
+
         else if (!strcmp(token->string, "defect_result")) {
             if (cJSON_IsBool(token)) {
                 defect_result = cJSON_IsTrue(token);

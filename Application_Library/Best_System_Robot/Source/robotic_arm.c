@@ -240,20 +240,24 @@ void RotateWheel(bool defect_result)
     // Use ms_motor_control() to control the motor
 
     if (defect_result) {
-        // Use a non-blocking delay to wait until button B5 is pressed
-        if (!Button_IsPressed(&button[B6]) || Button_IsPressed(&button[B5])) {
+        if (!Button_IsPressed(&button[B4]) || Button_IsPressed(&button[B3])) {
+            // Rotate to the next good bucket position
             ms_motor_control(&motor_shield_v1, MS_V1, M3, 0); // Stop Motor M3
         } else {
-            // Rotate to the next good bucket position
             ms_motor_control(&motor_shield_v1, MS_V1, M3, 1000); // Rotate Motor M3
         }
+        if (Button_IsPressed(&button[B5])) {
+            ms_motor_control(&motor_shield_v1, MS_V1, M3, 0); // Stop Motor M3
+        }
     } else {
-        // Use a non-blocking delay to wait until button B6 is pressed
-        if (!Button_IsPressed(&button[B5]) || Button_IsPressed(&button[B6])) {
+        if (!Button_IsPressed(&button[B3]) || Button_IsPressed(&button[B4])) {
+            // Rotate to the next bad bucket position
             ms_motor_control(&motor_shield_v1, MS_V1, M4, 0); // Stop Motor M4
         } else {
-            // Rotate to the next bad bucket position
             ms_motor_control(&motor_shield_v1, MS_V1, M4, 1000); // Rotate Motor M4
+        }
+        if (Button_IsPressed(&button[B6])) {
+            ms_motor_control(&motor_shield_v1, MS_V1, M4, 0); // Stop Motor M4
         }
     }
 }

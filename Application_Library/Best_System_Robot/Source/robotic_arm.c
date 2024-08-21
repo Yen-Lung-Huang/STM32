@@ -128,8 +128,9 @@ void HandleMoveToScanState(void)
     if (!myDelay.active) {
         if (Button_IsPressed(&button[B2])) {
             ms_motor_control(&motor_shield_v1, MS_V1, M1, 0); // Stop Motor M1
-            servo_control(&servo[S2], 10, ANGLE, true);       // Set Servo S2 to 10 degrees
             servo_control(&servo[S1], 15, ANGLE, true);       // Set Servo S1 to 15 degrees
+            servo_control(&servo[S2], 10, ANGLE, true);       // Set Servo S2 to 10 degrees
+            servo_control(&servo[S3], 1, ANGLE, true);        // Set Servo S3 to 1 degrees
             myDelay.Start(&myDelay, 100);                     // Start a non-blocking delay of 100 ms to ensure the servo reaches the scanning position
         } else {
             ms_motor_control(&motor_shield_v1, MS_V1, M1, -1000); // Move the carriage backward

@@ -6,13 +6,19 @@ void NonBlockingDelay_Start(NonBlockingDelay_TypeDef* self, uint32_t duration)
 {
     self->start_time = HAL_GetTick();
     self->delay = duration;
+    self->active = true; // Set the delay as active
 }
 
 // Check if the non-blocking delay has expired
 bool NonBlockingDelay_IsExpired(NonBlockingDelay_TypeDef* self)
 {
-    return (HAL_GetTick() - self->start_time) >= self->delay;
+    if (self->active && (HAL_GetTick() - self->start_time) >= self->delay) {
+        self->active = false; // Reset the active flag when the delay expires
+        return true;
+    }
+    return false; // Return false for all other conditions
 }
+
 
 // Create a new non-blocking delay object
 NonBlockingDelay_TypeDef CreateNonBlockingDelay()
@@ -20,6 +26,7 @@ NonBlockingDelay_TypeDef CreateNonBlockingDelay()
     NonBlockingDelay_TypeDef nbd_obj;
     nbd_obj.start_time = 0;
     nbd_obj.delay = 0;
+    nbd_obj.active = false; // Initialize the delay as inactive
     nbd_obj.Start = NonBlockingDelay_Start;
     nbd_obj.IsExpired = NonBlockingDelay_IsExpired;
     return nbd_obj;

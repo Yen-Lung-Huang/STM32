@@ -13,18 +13,15 @@ extern "C" {
 
 // Define an enum type to represent the state of the robotic arm
 typedef enum {
+    STATE_IDLE,
     STATE_INIT,
     STATE_MOVE_TO_GRAB,
     STATE_GRAB_SHUTTLECOCK,
     STATE_MOVE_TO_SCAN,
-    STATE_POSITION_FOR_SCANNING,
-    STATE_REQUEST_FOR_SCANNING,
-    STATE_WAIT_FOR_DEFECT_RESULT,
-    STATE_PLACE_SHUTTLECOCK,
-    STATE_KEEP_PLACEMENT,
-    STATE_FINISH_PLACEMENT,
-    STATE_SORT_SHUTTLECOCK,
-    STATE_IDLE
+    STATE_WAIT_FOR_SCAN,
+    STATE_SORT_AND_DROP,
+    STATE_STORE_SHUTTLECOCK,
+    STATE_STOP
 } RoboticArmState_TypeDef;
 
 
@@ -38,6 +35,15 @@ extern bool defect_result;
 /* FUNCTION (Prototype) DEFINITIONS */
 void CheckButtonsAndStopMotors(void);
 void UpdateRoboticArmState(void);
+void HandleIdleState(void);
+void HandleInitState(void);
+void HandleMoveToGrabState(void);
+void HandleGrabShuttlecockState(void);
+void HandleMoveToScanState(void);
+void HandleWaitForScanState(void);
+void HandleSortAndDropState(void);
+void HandleStoreShuttlecockState(void);
+void HandleStopState(void);
 
 
 #ifdef __cplusplus

@@ -13,6 +13,7 @@ extern "C" {
 // Define the non-blocking wait structure
 typedef struct NonBlockingDelay_TypeDef NonBlockingDelay_TypeDef;
 struct NonBlockingDelay_TypeDef {
+    bool active; // Add a flag to indicate if the delay is active
     uint32_t start_time;
     uint32_t delay;
     void (*Start)(NonBlockingDelay_TypeDef* self, uint32_t duration);

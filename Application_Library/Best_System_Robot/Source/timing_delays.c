@@ -23,12 +23,7 @@ bool NonBlockingDelay_IsExpired(NonBlockingDelay_TypeDef* self)
 // Create a new non-blocking delay object
 NonBlockingDelay_TypeDef CreateNonBlockingDelay()
 {
-    NonBlockingDelay_TypeDef nbd_obj;
-    nbd_obj.start_time = 0;
-    nbd_obj.delay = 0;
-    nbd_obj.active = false; // Initialize the delay as inactive
-    nbd_obj.Start = NonBlockingDelay_Start;
-    nbd_obj.IsExpired = NonBlockingDelay_IsExpired;
+    NonBlockingDelay_TypeDef nbd_obj = INIT_NON_BLOCKING_DELAY();
     return nbd_obj;
 }
 

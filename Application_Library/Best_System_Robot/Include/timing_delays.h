@@ -20,6 +20,8 @@ struct NonBlockingDelay_TypeDef {
     bool (*IsExpired)(NonBlockingDelay_TypeDef* self);
 };
 
+#define INIT_NON_BLOCKING_DELAY() (NonBlockingDelay_TypeDef){.active = false, .start_time = 0, .delay = 0, .Start = NonBlockingDelay_Start, .IsExpired = NonBlockingDelay_IsExpired}
+
 /* FUNCTION (Prototype) DEFINITIONS */
 void delay_us(uint16_t us);
 void NonBlockingDelay_Start(NonBlockingDelay_TypeDef* self, uint32_t duration);

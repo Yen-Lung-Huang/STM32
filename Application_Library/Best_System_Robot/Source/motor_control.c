@@ -95,7 +95,9 @@ void soft_motor_control(void *motor_shield, Motor_Shield_Type type, uint8_t dc_m
 
     uint32_t current_time = HAL_GetTick();
 
-    if (motor->EN.soft_control_delay.IsExpired(&motor->EN.soft_control_delay)) {
+    if (!motor->EN.soft_control_delay.active) {
+        motor->EN.soft_control_delay.Start(&motor->EN.soft_control_delay, 1);
+    } else if (motor->EN.soft_control_delay.IsExpired(&motor->EN.soft_control_delay)) {
         float dt = (current_time - motor_ctrl->last_update_time) / 1000.0f;
         int speed_diff = motor_ctrl->target_speed - motor_ctrl->current_speed;
 
@@ -172,6 +174,7 @@ void soft_motor_control(void *motor_shield, Motor_Shield_Type type, uint8_t dc_m
         // Update performance (this is where we would ideally use encoder feedback)
         bool moved_as_expected = abs(motor_ctrl->current_speed - target_speed) < motor_thresholds->low_speed_threshold;
         adjust_thresholds(motor, moved_as_expected);
+        motor->EN.soft_control_delay.Start(&motor->EN.soft_control_delay, 1); // Start the delay for the next update
     }
 }
 

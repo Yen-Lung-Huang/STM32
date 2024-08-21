@@ -1,5 +1,11 @@
 #include "robotic_arm.h"
 
+/* Global NonBlockingDelay Variables */
+NonBlockingDelay_TypeDef myDelay = INIT_NON_BLOCKING_DELAY();
+NonBlockingDelay_TypeDef s1Delay = INIT_NON_BLOCKING_DELAY();
+NonBlockingDelay_TypeDef s2Delay = INIT_NON_BLOCKING_DELAY();
+NonBlockingDelay_TypeDef m1Delay = INIT_NON_BLOCKING_DELAY();
+
 /* Sensor & Actuators Function---------------------------------------*/
 void CheckButtonsAndStopMotors(void)
 {
@@ -18,10 +24,7 @@ void CheckButtonsAndStopMotors(void)
 }
 
 /* Robotic Arm Configuration---------------------------------------*/
-
 RoboticArmState_TypeDef roboticArmState = STATE_IDLE;
-NonBlockingDelay_TypeDef myDelay;
-
 bool defect_result_received = false;
 bool defect_result = false;
 
@@ -62,7 +65,7 @@ void UpdateRoboticArmState(void)
 
 void HandleIdleState(void)
 {
-    myDelay = CreateNonBlockingDelay();
+    
 }
 
 void HandleInitState(void)
@@ -140,47 +143,60 @@ void HandleWaitForScanState(void)
 void HandleSortAndDropState(void)
 {
     if (defect_result_received) {
-        if (!myDelay.active) {
-            // Control M2 to move the ball holder to the appropriate position
+        // Step 1: Move ball holder (M2) and reset S1
+        if (!s1Delay.active && !s2Delay.active && !m1Delay.active) {
             if (defect_result) {
-                // Handle good shuttlecock
                 if (!Button_IsPressed(&button[B4])) {
                     ms_motor_control(&motor_shield_v1, MS_V1, M2, -1000); // Move the ball holder until B4 is pressed
                 } else {
                     ms_motor_control(&motor_shield_v1, MS_V1, M2, 0); // Stop ball holder movement
                     servo_control(&servo[S1], 0, ANGLE, true); // Reset S1 to 0 degrees
-                    servo_control(&servo[S2], 90, ANGLE, true); // Set S2 to 90 degrees
-                    myDelay.Start(&myDelay, 500); // Start a non-blocking delay to ensure S2 reaches 90 degrees
+                    s1Delay.Start(&s1Delay, 1000); // Start delay for S1 reset
                 }
             } else {
-                // Handle defective shuttlecock
                 if (!Button_IsPressed(&button[B3])) {
                     ms_motor_control(&motor_shield_v1, MS_V1, M2, 1000); // Move the ball holder until B3 is pressed
                 } else {
                     ms_motor_control(&motor_shield_v1, MS_V1, M2, 0); // Stop ball holder movement
                     servo_control(&servo[S1], 0, ANGLE, true); // Reset S1 to 0 degrees
-                    servo_control(&servo[S2], 90, ANGLE, true); // Set S2 to 90 degrees
-                    myDelay.Start(&myDelay, 500); // Start a non-blocking delay to ensure S2 reaches 90 degrees
+                    s1Delay.Start(&s1Delay, 1000); // Start delay for S1 reset
                 }
             }
+        }
 
-            // Control M1 to move the carriage until B1 is pressed
-            if (myDelay.IsExpired(&myDelay)) {
+        // Step 2: Rotate S2 to 90 degrees and then move M1
+        if (s1Delay.IsExpired(&s1Delay)) {
+            if (!s2Delay.active) {
+                servo_control(&servo[S2], 90, ANGLE, true); // Set S2 to 90 degrees
+                s2Delay.Start(&s2Delay, 1000); // Start delay for S2 rotation
+            }
+        }
+
+        if (s2Delay.IsExpired(&s2Delay)) {
+            if (!m1Delay.active) {
                 ms_motor_control(&motor_shield_v1, MS_V1, M1, 1000); // Move the carriage forward
                 if (Button_IsPressed(&button[B1])) {
                     ms_motor_control(&motor_shield_v1, MS_V1, M1, 0); // Stop carriage movement
                     servo_control(&servo[S2], 180, ANGLE, true); // Set S2 to 180 degrees
-                    myDelay.Start(&myDelay, 1000); // Start a non-blocking delay to ensure S2 reaches 180 degrees
+                    s2Delay.Start(&s2Delay, 1000); // Start delay for S2 to reach 180 degrees
                 }
             }
+        }
 
-            // After reaching the required position, adjust S1 and release S3 to drop the shuttlecock
-            if (myDelay.IsExpired(&myDelay)) {
-                servo_control(&servo[S1], defect_result ? -65 : 65, ANGLE, true); // Set S1 to -65 or 65 degrees based on shuttlecock quality
-                servo_control(&servo[S3], 10, ANGLE, true); // Release gripper to drop the shuttlecock
-                myDelay.Start(&myDelay, 1000); // Start a non-blocking delay to ensure shuttlecock is dropped
-            }
-        } else if (myDelay.IsExpired(&myDelay)) {
+        // Step 3: Adjust S1 and release S3 to drop the shuttlecock
+        if (m1Delay.IsExpired(&m1Delay) && s2Delay.IsExpired(&s2Delay)) {
+            servo_control(&servo[S1], defect_result ? -65 : 65, ANGLE, true); // Set S1 to -65 or 65 degrees
+            s1Delay.Start(&s1Delay, 1000); // Wait for arm to execute
+        }
+
+        if (s1Delay.IsExpired(&s1Delay)) {
+            servo_control(&servo[S3], 10, ANGLE, true); // Release gripper to drop the shuttlecock
+            s2Delay.Start(&s2Delay, 1000); // Start delay to ensure shuttlecock is dropped
+        }
+
+        // Step 4: Reset S1 to 0 degrees after dropping the shuttlecock
+        if (s2Delay.IsExpired(&s2Delay)) {
+            servo_control(&servo[S1], 0, ANGLE, true); // Reset S1 to 0 degrees
             roboticArmState = STATE_STORE_SHUTTLECOCK; // Transition to storing shuttlecock state
         }
     }

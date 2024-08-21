@@ -15,12 +15,14 @@ void core_loop(void)
 {
     for (int i = 0; i < NUM_BUTTONS; Button_CheckState(&button[i++]));
     for (int i = 0; i < 3; HC_SR04_GetDistance(&hc_sr04[i++]));
-    
+
     UpdateRoboticArmState();
 
     for (uint8_t i = M1; i <= M4; i++) {
         soft_motor_control(&motor_shield_l29xx, MS_L29XX, i, get_dc_motor(&motor_shield_l29xx, MS_L29XX, i)->controller.target_speed);
     }
+
+    // printf("m1_current_speed: %d, w1_current_speed: %d\n", motor_shield_v1.M1.controller.current_speed, motor_shield_l29xx.M1.controller.current_speed);
 }
 
 #if !defined(SERVO_H)
@@ -289,6 +291,9 @@ bool json_action(char *JSON_STRING, uint16_t token_size) // sizeof(char)*strlen(
                 } else if (!strcmp(token->valuestring, "STATE_STOP")) {
                     roboticArmState = STATE_STOP;
                     printf("Robotic arm state set to STOP\r\n");
+                } else if (!strcmp(token->valuestring, "STATE_IDLE")) {
+                    roboticArmState = STATE_IDLE;
+                    printf("Robotic arm state set to IDLE\r\n");
                 } else {
                     printf("Invalid arm state\r\n");
                 }

@@ -194,7 +194,7 @@ void set_motor_speed(void *motor_shield, Motor_Shield_Type type, uint8_t dc_moto
 {
     // Limit the speed range
     target_speed = (target_speed > DC_MOTOR_MAX) ? DC_MOTOR_MAX : ((target_speed < -DC_MOTOR_MAX) ? -DC_MOTOR_MAX : target_speed);
-    
+
     // Get the DC motor object
     DC_Motor_TypeDef *motor = get_dc_motor(motor_shield, type, dc_motor_number);
     if (motor != NULL) {
@@ -283,4 +283,30 @@ void ms_v1_servo_control(Motor_Shield_V1 *motor_shield, uint8_t servo_number, fl
     }
 }
 
+int get_motor_speed(void *motor_shield, Motor_Shield_Type type, uint8_t dc_motor_number)
+{
+    DC_Motor_TypeDef *motor = get_dc_motor(motor_shield, type, dc_motor_number);
+    if (motor == NULL) {
+        return 0;
+    }
 
+    int speed = 0;
+    if (motor->EN.enable_pwm) {
+        // If the motor is in PWM mode
+        speed = motor->EN.PWM.pwm_value;
+        if (motor->reverse) {
+            speed = -speed;
+        }
+    } else {
+        // If the motor is in GPIO mode
+        bool forward = HAL_GPIO_ReadPin(motor->IN1.Port, motor->IN1.Pin) == GPIO_PIN_SET;
+        bool reverse = HAL_GPIO_ReadPin(motor->IN2.Port, motor->IN2.Pin) == GPIO_PIN_SET;
+        if (forward && !reverse) {
+            speed = DC_MOTOR_MAX;
+        } else if (!forward && reverse) {
+            speed = -DC_MOTOR_MAX;
+        }
+    }
+
+    return speed;
+}

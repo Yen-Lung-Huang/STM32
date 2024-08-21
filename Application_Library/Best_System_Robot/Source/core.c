@@ -15,7 +15,8 @@ void core_loop(void)
 {
     for (int i = 0; i < NUM_BUTTONS; Button_CheckState(&button[i++]));
     for (int i = 0; i < 3; HC_SR04_GetDistance(&hc_sr04[i++]));
-    // UpdateRoboticArmState();
+    
+    UpdateRoboticArmState();
 
     for (uint8_t i = M1; i <= M4; i++) {
         soft_motor_control(&motor_shield_l29xx, MS_L29XX, i, get_dc_motor(&motor_shield_l29xx, MS_L29XX, i)->controller.target_speed);

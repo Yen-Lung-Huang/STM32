@@ -13,14 +13,14 @@ void CheckButtonsAndStopMotors(void)
     int m2_speed = get_dc_motor(&motor_shield_v1, MS_V1, M2)->controller.current_speed;
 
     // Check M1 motor control based on button press and motor direction
-    if ((Button_IsPressed(&button[B1]) && m1_speed > 0) || 
-        (Button_IsPressed(&button[B2]) && m1_speed < 0)) {
+    if ((Button_IsPressed(&button[B1]) && m1_speed > 0) ||
+            (Button_IsPressed(&button[B2]) && m1_speed < 0)) {
         ms_motor_control(&motor_shield_v1, MS_V1, M1, 0); // Stop Motor M1
     }
 
     // Check M2 motor control based on button press and motor direction
-    if ((Button_IsPressed(&button[B3]) && m2_speed > 0) || 
-        (Button_IsPressed(&button[B4]) && m2_speed < 0)) {
+    if ((Button_IsPressed(&button[B3]) && m2_speed > 0) ||
+            (Button_IsPressed(&button[B4]) && m2_speed < 0)) {
         ms_motor_control(&motor_shield_v1, MS_V1, M2, 0); // Stop Motor M2
     }
 
@@ -41,41 +41,41 @@ bool defect_result = false;
 void UpdateRoboticArmState(void)
 {
     switch (roboticArmState) {
-        case STATE_IDLE:
-            HandleIdleState();
-            break;
-        case STATE_INIT:
-            HandleInitState();
-            break;
-        case STATE_MOVE_TO_GRAB:
-            HandleMoveToGrabState();
-            break;
-        case STATE_GRAB_SHUTTLECOCK:
-            HandleGrabShuttlecockState();
-            break;
-        case STATE_MOVE_TO_SCAN:
-            HandleMoveToScanState();
-            break;
-        case STATE_WAIT_FOR_SCAN:
-            HandleWaitForScanState();
-            break;
-        case STATE_SORT_AND_DROP:
-            HandleSortAndDropState();
-            break;
-        case STATE_STORE_SHUTTLECOCK:
-            HandleStoreShuttlecockState();
-            break;
-        case STATE_STOP:
-            HandleStopState();
-            break;
-        default:
-            break;
+    case STATE_IDLE:
+        HandleIdleState();
+        break;
+    case STATE_INIT:
+        HandleInitState();
+        break;
+    case STATE_MOVE_TO_GRAB:
+        HandleMoveToGrabState();
+        break;
+    case STATE_GRAB_SHUTTLECOCK:
+        HandleGrabShuttlecockState();
+        break;
+    case STATE_MOVE_TO_SCAN:
+        HandleMoveToScanState();
+        break;
+    case STATE_WAIT_FOR_SCAN:
+        HandleWaitForScanState();
+        break;
+    case STATE_SORT_AND_DROP:
+        HandleSortAndDropState();
+        break;
+    case STATE_STORE_SHUTTLECOCK:
+        HandleStoreShuttlecockState();
+        break;
+    case STATE_STOP:
+        HandleStopState();
+        break;
+    default:
+        break;
     }
 }
 
 void HandleIdleState(void)
 {
-    
+
 }
 
 void HandleInitState(void)
@@ -174,14 +174,13 @@ void HandleSortAndDropState(void)
             }
         }
 
-        // Step 2: Rotate S2 to 90 degrees and then move M1
-        if (s1Delay.IsExpired(&s1Delay)) {
-            if (!s2Delay.active) {
-                servo_control(&servo[S2], 90, ANGLE, true); // Set S2 to 90 degrees
-                s2Delay.Start(&s2Delay, 1000); // Start delay for S2 rotation
-            }
+        // Step 2: Rotate S2 to 90 degrees
+        if (s1Delay.IsExpired(&s1Delay) && !s2Delay.active && !m1Delay.active) {
+            servo_control(&servo[S2], 90, ANGLE, true); // Set S2 to 90 degrees
+            s2Delay.Start(&s2Delay, 1000); // Start delay for S2 rotation
         }
 
+        // Step 3: Move M1 and Rotate S2 to 180 degrees
         if (s2Delay.IsExpired(&s2Delay) && !m1Delay.active) {
             ms_motor_control(&motor_shield_v1, MS_V1, M1, 1000); // Move the carriage forward
             if (Button_IsPressed(&button[B1])) {
@@ -191,20 +190,20 @@ void HandleSortAndDropState(void)
             }
         }
 
-        // Step 3: Adjust S1 and release S3 to drop the shuttlecock
-        if (m1Delay.IsExpired(&m1Delay) && !s1Delay.active) {
+        // Step 4: Adjust S1
+        if (m1Delay.IsExpired(&m1Delay) && !s1Delay.active && !s2Delay.active) {
             servo_control(&servo[S1], defect_result ? -65 : 65, ANGLE, true); // Set S1 to -65 or 65 degrees
-            s1Delay.Start(&s1Delay, 1000); // Wait for arm to execute
+            s1Delay.Start(&s1Delay, 1000); // Start delay for S1 adjustment
         }
 
-        // Step 4: Release the shuttlecock
-        if (s1Delay.IsExpired(&s1Delay) && !s2Delay.active) {
+        // Step 5: Release S3 to drop the shuttlecock
+        if (s1Delay.IsExpired(&s1Delay) && s2Delay.IsExpired(&s2Delay)) {
             servo_control(&servo[S3], 10, ANGLE, true); // Release gripper to drop the shuttlecock
             s2Delay.Start(&s2Delay, 1000); // Start delay to ensure shuttlecock is dropped
         }
 
-        // Step 5: Reset S1 to 0 degrees after dropping the shuttlecock
-        if (s2Delay.IsExpired(&s2Delay)) {
+        // Step 6: Reset S1 to 0 degrees after dropping the shuttlecock
+        if (s2Delay.IsExpired(&s2Delay) && !s1Delay.active) {
             servo_control(&servo[S1], 0, ANGLE, true); // Reset S1 to 0 degrees
             roboticArmState = STATE_STORE_SHUTTLECOCK; // Transition to storing shuttlecock state
         }

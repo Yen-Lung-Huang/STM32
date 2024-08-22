@@ -22,6 +22,8 @@ void core_loop(void)
         soft_motor_control(&motor_shield_l29xx, MS_L29XX, i, get_dc_motor(&motor_shield_l29xx, MS_L29XX, i)->controller.target_speed);
     }
 
+    CheckButtonsAndStopMotors(); // Check buttons and stop motors if necessary
+    
     // printf("m1_current_speed: %d, w1_current_speed: %d\n", motor_shield_v1.M1.controller.current_speed, motor_shield_l29xx.M1.controller.current_speed);
 }
 

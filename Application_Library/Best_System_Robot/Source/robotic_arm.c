@@ -9,17 +9,27 @@ NonBlockingDelay_TypeDef m1Delay = INIT_NON_BLOCKING_DELAY();
 /* Sensor & Actuators Function---------------------------------------*/
 void CheckButtonsAndStopMotors(void)
 {
-    if (Button_IsPressed(&button[B1]) || Button_IsPressed(&button[B2])) {
-        ms_motor_control(&motor_shield_v1, MS_V1, M1, 0);
+    int m1_speed = get_dc_motor(&motor_shield_v1, MS_V1, M1)->controller.current_speed;
+    int m2_speed = get_dc_motor(&motor_shield_v1, MS_V1, M2)->controller.current_speed;
+
+    // Check M1 motor control based on button press and motor direction
+    if ((Button_IsPressed(&button[B1]) && m1_speed > 0) || 
+        (Button_IsPressed(&button[B2]) && m1_speed < 0)) {
+        ms_motor_control(&motor_shield_v1, MS_V1, M1, 0); // Stop Motor M1
     }
-    if (Button_IsPressed(&button[B3]) || Button_IsPressed(&button[B4])) {
-        ms_motor_control(&motor_shield_v1, MS_V1, M2, 0);
+
+    // Check M2 motor control based on button press and motor direction
+    if ((Button_IsPressed(&button[B3]) && m2_speed > 0) || 
+        (Button_IsPressed(&button[B4]) && m2_speed < 0)) {
+        ms_motor_control(&motor_shield_v1, MS_V1, M2, 0); // Stop Motor M2
     }
+
+    // Original logic for M3 and M4 motors
     if (!Button_IsPressed(&button[B4])) {
-        ms_motor_control(&motor_shield_v1, MS_V1, M3, 0);
+        ms_motor_control(&motor_shield_v1, MS_V1, M3, 0); // Stop Motor M3
     }
     if (!Button_IsPressed(&button[B3])) {
-        ms_motor_control(&motor_shield_v1, MS_V1, M4, 0);
+        ms_motor_control(&motor_shield_v1, MS_V1, M4, 0); // Stop Motor M4
     }
 }
 
@@ -178,15 +188,17 @@ void HandleSortAndDropState(void)
                 if (Button_IsPressed(&button[B1])) {
                     ms_motor_control(&motor_shield_v1, MS_V1, M1, 0); // Stop carriage movement
                     servo_control(&servo[S2], 180, ANGLE, true); // Set S2 to 180 degrees
-                    s2Delay.Start(&s2Delay, 1000); // Start delay for S2 to reach 180 degrees
+                    m1Delay.Start(&m1Delay, 1000); // Start delay to ensure S2 reaches 180 degrees
                 }
             }
         }
 
         // Step 3: Adjust S1 and release S3 to drop the shuttlecock
-        if (m1Delay.IsExpired(&m1Delay) && s2Delay.IsExpired(&s2Delay)) {
-            servo_control(&servo[S1], defect_result ? -65 : 65, ANGLE, true); // Set S1 to -65 or 65 degrees
-            s1Delay.Start(&s1Delay, 1000); // Wait for arm to execute
+        if (m1Delay.IsExpired(&m1Delay)) {
+            if (!s1Delay.active) {
+                servo_control(&servo[S1], defect_result ? -65 : 65, ANGLE, true); // Set S1 to -65 or 65 degrees
+                s1Delay.Start(&s1Delay, 1000); // Wait for arm to execute
+            }
         }
 
         if (s1Delay.IsExpired(&s1Delay)) {

@@ -6,6 +6,7 @@ NonBlockingDelay_TypeDef s1Delay = INIT_NON_BLOCKING_DELAY();
 NonBlockingDelay_TypeDef s2Delay = INIT_NON_BLOCKING_DELAY();
 NonBlockingDelay_TypeDef m1Delay = INIT_NON_BLOCKING_DELAY();
 
+
 /* Sensor & Actuators Function---------------------------------------*/
 void CheckButtonsAndStopMotors(void)
 {

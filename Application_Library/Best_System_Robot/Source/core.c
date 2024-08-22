@@ -298,6 +298,9 @@ bool json_action(char *JSON_STRING, uint16_t token_size) // sizeof(char)*strlen(
                 if (!strcmp(token->valuestring, "STATE_INIT")) {
                     roboticArmState = STATE_INIT;
                     printf("Robotic arm state set to INIT\r\n");
+                } else if (!strcmp(token->valuestring, "STATE_MOVE_TO_GRAB")) {
+                    roboticArmState = STATE_MOVE_TO_GRAB;
+                    printf("Robotic arm state set to MOVE_TO_GRAB\r\n");
                 } else if (!strcmp(token->valuestring, "STATE_STOP")) {
                     roboticArmState = STATE_STOP;
                     printf("Robotic arm state set to STOP\r\n");
@@ -330,6 +333,20 @@ bool json_action(char *JSON_STRING, uint16_t token_size) // sizeof(char)*strlen(
                 }
             } else {
                 printf("value is not a boolean\n");
+            }
+        }
+
+        else if (!strcmp(token->string, "button")) {
+            if (cJSON_IsNumber(token)) {
+                int button_number = token->valueint;
+                if (button_number >= 1 && button_number <= 7) {
+                    bool is_pressed = Button_IsPressed(&button[button_number - 1]); // -1 因为 button 数组是从 0 开始索引
+                    printf("Button B%d is %s\r\n", button_number, is_pressed ? "pressed" : "not pressed");
+                } else {
+                    printf("Invalid button number. Please provide a value between 1 and 7.\r\n");
+                }
+            } else {
+                printf("Invalid button value. It should be a number between 1 and 7.\r\n");
             }
         }
 

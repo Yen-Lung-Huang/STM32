@@ -35,7 +35,7 @@ void CheckButtonsAndStopMotors(void)
 }
 
 /* Robotic Arm Configuration---------------------------------------*/
-RoboticArmState_TypeDef roboticArmState = STATE_IDLE;
+RoboticArmState_TypeDef roboticArmState = STATE_INIT;
 bool defect_result_received = false;
 bool defect_result = false;
 
@@ -95,7 +95,7 @@ void HandleInitState(void)
     }
 
     if (myDelay.IsExpired(&myDelay)) {
-        roboticArmState = STATE_MOVE_TO_GRAB;
+        roboticArmState = STATE_IDLE;
     }
 }
 
@@ -153,66 +153,91 @@ void HandleWaitForScanState(void)
 
 void HandleSortAndDropState(void)
 {
+    static bool step1_done = false;
+    static bool step2_done = false;
+    static bool step3_done = false;
+    static bool step4_done = false;
+    static bool step5_done = false;
+
     if (defect_result_received) {
         // Step 1: Move ball holder (M2) and reset S1
-        if (!s1Delay.active && !s2Delay.active && !m1Delay.active) {
+        if (!step1_done) {
             printf("step 1\n");
             if (defect_result) {
                 if (!Button_IsPressed(&button[B4])) {
-                    ms_motor_control(&motor_shield_v1, MS_V1, M2, -1000); // Move the ball holder until B4 is pressed
+                    ms_motor_control(&motor_shield_v1, MS_V1, M2, -1000);
                 } else {
-                    ms_motor_control(&motor_shield_v1, MS_V1, M2, 0); // Stop ball holder movement
-                    servo_control(&servo[S1], 0, ANGLE, true); // Reset S1 to 0 degrees
-                    s1Delay.Start(&s1Delay, 1000); // Start delay for S1 reset
+                    ms_motor_control(&motor_shield_v1, MS_V1, M2, 0);
+                    servo_control(&servo[S1], 0, ANGLE, true);
+                    s1Delay.Start(&s1Delay, 100);
+                    step1_done = true;
                 }
             } else {
                 if (!Button_IsPressed(&button[B3])) {
-                    ms_motor_control(&motor_shield_v1, MS_V1, M2, 1000); // Move the ball holder until B3 is pressed
+                    ms_motor_control(&motor_shield_v1, MS_V1, M2, 1000);
                 } else {
-                    ms_motor_control(&motor_shield_v1, MS_V1, M2, 0); // Stop ball holder movement
-                    servo_control(&servo[S1], 0, ANGLE, true); // Reset S1 to 0 degrees
-                    s1Delay.Start(&s1Delay, 1000); // Start delay for S1 reset
+                    ms_motor_control(&motor_shield_v1, MS_V1, M2, 0);
+                    servo_control(&servo[S1], 0, ANGLE, true);
+                    s1Delay.Start(&s1Delay, 100);
+                    step1_done = true;
                 }
             }
         }
 
         // Step 2: Rotate S2 to 90 degrees
-        if (s1Delay.IsExpired(&s1Delay) && !s2Delay.active && !m1Delay.active) {
+        if (!step2_done && s1Delay.IsExpired(&s1Delay)) {
             printf("step 2\n");
-            servo_control(&servo[S2], 90, ANGLE, true); // Set S2 to 90 degrees
-            s2Delay.Start(&s2Delay, 1000); // Start delay for S2 rotation
+            servo_control(&servo[S2], 90, ANGLE, true);
+            s2Delay.Start(&s2Delay, 1000);
+            step2_done = true;
         }
 
         // Step 3: Move M1 and Rotate S2 to 180 degrees
-        if (s2Delay.IsExpired(&s2Delay) && !m1Delay.active) {
+        if (step2_done && !step3_done) {
             printf("step 3\n");
-            ms_motor_control(&motor_shield_v1, MS_V1, M1, 1000); // Move the carriage forward
+            ms_motor_control(&motor_shield_v1, MS_V1, M1, 1000);
+
+            // Continuously check if Button B1 is pressed
             if (Button_IsPressed(&button[B1])) {
+                printf("Button B1 pressed, stopping M1 and rotating S2 to 180 degrees\n");
                 ms_motor_control(&motor_shield_v1, MS_V1, M1, 0); // Stop carriage movement
                 servo_control(&servo[S2], 180, ANGLE, true); // Set S2 to 180 degrees
                 m1Delay.Start(&m1Delay, 1000); // Start delay to ensure S2 reaches 180 degrees
+
+                // Check if S2 has reached 180 degrees
+                if (is_pwm_at_angle(&servo[S2], 180)) {
+                    printf("S2 has reached 180 degrees\n");
+                    step3_done = true;
+                } else {
+                    printf("S2 has not reached 180 degrees\n");
+                }
             }
         }
 
         // Step 4: Adjust S1
-        if (m1Delay.IsExpired(&m1Delay) && !s1Delay.active && !s2Delay.active && is_pwm_at_angle(&servo[S2], 180)) {
+        if (step3_done && !step4_done && m1Delay.IsExpired(&m1Delay)) {
             printf("step 4\n");
-            servo_control(&servo[S1], defect_result ? -65 : 65, ANGLE, true); // Set S1 to -65 or 65 degrees
-            s1Delay.Start(&s1Delay, 1000); // Start delay for S1 adjustment
+            servo_control(&servo[S1], defect_result ? -65 : 65, ANGLE, true);
+            s1Delay.Start(&s1Delay, 1000);
+            step4_done = true;
         }
 
         // Step 5: Release S3 to drop the shuttlecock
-        if (s1Delay.IsExpired(&s1Delay) && s2Delay.IsExpired(&s2Delay) && is_pwm_at_angle(&servo[S1], defect_result ? -65 : 65)) {
+        if (step4_done && !step5_done && s1Delay.IsExpired(&s1Delay) && s2Delay.IsExpired(&s2Delay)) {
             printf("step 5\n");
-            servo_control(&servo[S3], 10, ANGLE, true); // Release gripper to drop the shuttlecock
-            s2Delay.Start(&s2Delay, 1000); // Start delay to ensure shuttlecock is dropped
+            servo_control(&servo[S3], 10, ANGLE, true);
+            s2Delay.Start(&s2Delay, 1000);
+            step5_done = true;
         }
 
         // Step 6: Reset S1 to 0 degrees after dropping the shuttlecock
-        if (s2Delay.IsExpired(&s2Delay) && is_pwm_at_angle(&servo[S3], 10)) {
+        if (step5_done && s2Delay.IsExpired(&s2Delay)) {
             printf("step 6\n");
-            servo_control(&servo[S1], 0, ANGLE, true); // Reset S1 to 0 degrees
-            roboticArmState = STATE_STORE_SHUTTLECOCK; // Transition to storing shuttlecock state
+            servo_control(&servo[S1], 0, ANGLE, true);
+            roboticArmState = STATE_STORE_SHUTTLECOCK;
+
+            // Reset steps
+            step1_done = step2_done = step3_done = step4_done = step5_done = false;
         }
     }
 }
@@ -248,6 +273,8 @@ void HandleStopState(void)
     ms_motor_control(&motor_shield_v1, MS_V1, M2, 0);
     ms_motor_control(&motor_shield_v1, MS_V1, M3, 0);
     ms_motor_control(&motor_shield_v1, MS_V1, M4, 0);
+    
+    roboticArmState = STATE_IDLE;
 }
 
 bool CheckBucketFull(bool defect_result)

@@ -182,31 +182,28 @@ void HandleSortAndDropState(void)
             }
         }
 
-        if (s2Delay.IsExpired(&s2Delay)) {
-            if (!m1Delay.active) {
-                ms_motor_control(&motor_shield_v1, MS_V1, M1, 1000); // Move the carriage forward
-                if (Button_IsPressed(&button[B1])) {
-                    ms_motor_control(&motor_shield_v1, MS_V1, M1, 0); // Stop carriage movement
-                    servo_control(&servo[S2], 180, ANGLE, true); // Set S2 to 180 degrees
-                    m1Delay.Start(&m1Delay, 1000); // Start delay to ensure S2 reaches 180 degrees
-                }
+        if (s2Delay.IsExpired(&s2Delay) && !m1Delay.active) {
+            ms_motor_control(&motor_shield_v1, MS_V1, M1, 1000); // Move the carriage forward
+            if (Button_IsPressed(&button[B1])) {
+                ms_motor_control(&motor_shield_v1, MS_V1, M1, 0); // Stop carriage movement
+                servo_control(&servo[S2], 180, ANGLE, true); // Set S2 to 180 degrees
+                m1Delay.Start(&m1Delay, 1000); // Start delay to ensure S2 reaches 180 degrees
             }
         }
 
         // Step 3: Adjust S1 and release S3 to drop the shuttlecock
-        if (m1Delay.IsExpired(&m1Delay)) {
-            if (!s1Delay.active) {
-                servo_control(&servo[S1], defect_result ? -65 : 65, ANGLE, true); // Set S1 to -65 or 65 degrees
-                s1Delay.Start(&s1Delay, 1000); // Wait for arm to execute
-            }
+        if (m1Delay.IsExpired(&m1Delay) && !s1Delay.active) {
+            servo_control(&servo[S1], defect_result ? -65 : 65, ANGLE, true); // Set S1 to -65 or 65 degrees
+            s1Delay.Start(&s1Delay, 1000); // Wait for arm to execute
         }
 
-        if (s1Delay.IsExpired(&s1Delay)) {
+        // Step 4: Release the shuttlecock
+        if (s1Delay.IsExpired(&s1Delay) && !s2Delay.active) {
             servo_control(&servo[S3], 10, ANGLE, true); // Release gripper to drop the shuttlecock
             s2Delay.Start(&s2Delay, 1000); // Start delay to ensure shuttlecock is dropped
         }
 
-        // Step 4: Reset S1 to 0 degrees after dropping the shuttlecock
+        // Step 5: Reset S1 to 0 degrees after dropping the shuttlecock
         if (s2Delay.IsExpired(&s2Delay)) {
             servo_control(&servo[S1], 0, ANGLE, true); // Reset S1 to 0 degrees
             roboticArmState = STATE_STORE_SHUTTLECOCK; // Transition to storing shuttlecock state

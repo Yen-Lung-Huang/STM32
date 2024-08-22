@@ -58,6 +58,7 @@ void all_pwm_stop(void);
 
 float pwm_get_physical(PWM_TypeDef* servo);
 uint16_t pwm_get_limit(PWM_TypeDef* servo);
+bool is_pwm_at_angle(PWM_TypeDef* servo, float angle);
 
 
 #ifdef __cplusplus

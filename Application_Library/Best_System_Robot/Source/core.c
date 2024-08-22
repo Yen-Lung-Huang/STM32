@@ -23,8 +23,24 @@ void core_loop(void)
     }
 
     CheckButtonsAndStopMotors(); // Check buttons and stop motors if necessary
-    
+
+    // printf("S1: %f, S2: %f, S3: %f; ", pwm_get_physical(&servo[S1]), pwm_get_physical(&servo[S2]), pwm_get_physical(&servo[S3]));
+    // printf("S1 PWM: %d, S2 PWM: %d, S3 PWM: %d\r\n", servo[S1].pwm_value, servo[S2].pwm_value, servo[S3].pwm_value);
     // printf("m1_current_speed: %d, w1_current_speed: %d\n", motor_shield_v1.M1.controller.current_speed, motor_shield_l29xx.M1.controller.current_speed);
+
+    // // PrintServoS2Status
+    // float current_s2_angle = pwm_get_physical(&servo[S2]);
+    // float degrees_per_pwm = calculate_degrees_per_pwm(&servo[S2]);
+    // float error_margin = degrees_per_pwm;
+    // printf("S2 Angle: %.2f, Degrees per PWM: %.2f, pwm_value: %d, Reached 90: %s\n", 
+    // current_s2_angle, degrees_per_pwm, servo[S2].pwm_value,
+    // fabs(current_s2_angle - 90.0f) <= error_margin ? "Yes" : "No");
+
+    // PrintServoS2Status
+    float target_angle = 90;
+    printf("S2 Angle: %.2f, pwm_value: %d, Reached %f: %s\n",
+               pwm_get_physical(&servo[S2]), servo[S2].pwm_value, target_angle, is_pwm_at_angle(&servo[S2], target_angle) ? "Yes" : "No");
+
 }
 
 #if !defined(SERVO_H)

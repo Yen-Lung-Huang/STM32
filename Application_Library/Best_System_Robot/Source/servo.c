@@ -37,7 +37,7 @@ void servos_init(void)
     });
 
     servo[S3] = pwm_constructor((PWM_TypeDef) {
-        .timer=&htim2, .channel=TIM_CHANNEL_4, .pwm_min=118-(40*(118-25)/180),\
+        .timer=&htim2, .channel=TIM_CHANNEL_4, .pwm_min=(118-(40*(118-25)/180)),\
                                 .pwm_max=118, .physical_min=0, .physical_max=40, .offset=0,.pwm_value=0,\
                                          .reverse=true, .complementary=false, .latch=false
     });
@@ -172,7 +172,18 @@ void all_pwm_stop(void)
 
 float pwm_get_physical(PWM_TypeDef* servo)
 {
-    return map(servo->pwm_value,servo->pwm_min,servo->pwm_max,servo->physical_min,servo->physical_max);
+    // Apply offset to the PWM value before converting
+    float pwm_value_with_offset = servo->pwm_value - servo->offset;
+
+    // Convert PWM value to physical angle
+    float physical_value = map(pwm_value_with_offset, servo->pwm_min, servo->pwm_max, servo->physical_min, servo->physical_max);
+
+    // Apply reverse mapping if needed
+    if (servo->reverse) {
+        physical_value = reverse_physical(servo, physical_value);
+    }
+
+    return physical_value;
 }
 
 
@@ -181,17 +192,29 @@ uint16_t pwm_get_limit(PWM_TypeDef* servo)
     uint16_t limit_pwm = servo->pwm_value;
 
     // Apply offset if necessary
-    if (servo->offset != 0) {
-        limit_pwm = limit_pwm + servo->offset;
-    }
+    limit_pwm += servo->offset;
+
     // Enforce PWM limits
-    if(limit_pwm < servo->pwm_min) {
+    if (limit_pwm < servo->pwm_min) {
         limit_pwm = servo->pwm_min;
     }
-    if(limit_pwm > servo->pwm_max) {
+    if (limit_pwm > servo->pwm_max) {
         limit_pwm = servo->pwm_max;
     }
+
     return limit_pwm; // Return limited PWM value
 }
 
 
+// Function to check if the PWM value corresponds to a specific angle
+bool is_pwm_at_angle(PWM_TypeDef* servo, float angle)
+{
+    // Calculate the PWM value corresponding to the given angle
+    uint16_t pwm_for_angle = map(angle, servo->physical_min, servo->physical_max, servo->pwm_min, servo->pwm_max);
+
+    // Get the current PWM value of the servo
+    uint16_t current_pwm = servo->pwm_value;
+
+    // Check if the current PWM value is close to the PWM value for the given angle
+    return (current_pwm >= pwm_for_angle - 1 && current_pwm <= pwm_for_angle + 1);
+}

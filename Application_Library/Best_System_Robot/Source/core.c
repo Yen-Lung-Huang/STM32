@@ -29,7 +29,7 @@ void core_loop(void)
     // printf("m1_current_speed: %d, w1_current_speed: %d\n", motor_shield_v1.M1.controller.current_speed, motor_shield_l29xx.M1.controller.current_speed);
 
     // // PrintServoS2Status
-    // float target_angle = 90;
+    // float target_angle = 180;
     // printf("pwm_value: %d, S2 Angle: %.2f, Reached %f: %s\n",
     //            servo[S2].pwm_value, pwm_get_physical(&servo[S2]), target_angle, is_pwm_at_angle(&servo[S2], target_angle) ? "Yes" : "No");
 

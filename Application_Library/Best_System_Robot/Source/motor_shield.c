@@ -243,6 +243,14 @@ void ms_motor_control(void *motor_shield, Motor_Shield_Type type, uint8_t dc_mot
         HAL_GPIO_WritePin(motor->IN1.Port, motor->IN1.Pin, forward_rotation ? GPIO_PIN_SET : GPIO_PIN_RESET);
         HAL_GPIO_WritePin(motor->IN2.Port, motor->IN2.Pin, forward_rotation ? GPIO_PIN_RESET : GPIO_PIN_SET);
     }
+
+    // Update current_speed based on PWM value and motor direction
+    if (motor->EN.enable_pwm) {
+        motor->controller.current_speed = (forward_rotation ? 1 : -1) * pwm_value;
+    } else {
+        // Handle non-PWM mode: set to max speed in the correct direction
+        motor->controller.current_speed = (forward_rotation ? 1 : -1) * (pwm_value > 0 ? DC_MOTOR_MAX : 0);
+    }
 }
 
 // Define a function to control the servo angle with one input

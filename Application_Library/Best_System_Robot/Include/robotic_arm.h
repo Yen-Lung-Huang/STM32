@@ -15,7 +15,6 @@ extern "C" {
 typedef enum {
     STATE_IDLE,
     STATE_INIT,
-    STATE_MOVE_TO_GRAB,
     STATE_GRAB_SHUTTLECOCK,
     STATE_MOVE_TO_SCAN,
     STATE_WAIT_FOR_SCAN,
@@ -37,7 +36,6 @@ void CheckButtonsAndStopMotors(void);
 void UpdateRoboticArmState(void);
 void HandleIdleState(void);
 void HandleInitState(void);
-void HandleMoveToGrabState(void);
 void HandleGrabShuttlecockState(void);
 void HandleMoveToScanState(void);
 void HandleWaitForScanState(void);

@@ -27,6 +27,34 @@ void Button_CheckState(Button_TypeDef* button)
     }
 }
 
+/* Sensor & Actuators Function---------------------------------------*/
+void CheckButtonsAndStopMotors(void)
+{
+    int m1_speed = get_dc_motor(&motor_shield_v1, MS_V1, M1)->controller.current_speed;
+    int m2_speed = get_dc_motor(&motor_shield_v1, MS_V1, M2)->controller.current_speed;
+
+    // Check M1 motor control based on button press and motor direction
+    if ((Button_IsPressed(&button[B1]) && m1_speed > 0) ||
+            (Button_IsPressed(&button[B2]) && m1_speed < 0)) {
+        ms_motor_control(&motor_shield_v1, MS_V1, M1, 0); // Stop Motor M1
+    }
+
+    // Check M2 motor control based on button press and motor direction
+    if ((Button_IsPressed(&button[B3]) && m2_speed > 0) ||
+            (Button_IsPressed(&button[B4]) && m2_speed < 0)) {
+        ms_motor_control(&motor_shield_v1, MS_V1, M2, 0); // Stop Motor M2
+    }
+
+    // Original logic for M3 and M4 motors
+    if (!Button_IsPressed(&button[B4])) {
+        ms_motor_control(&motor_shield_v1, MS_V1, M3, 0); // Stop Motor M3
+    }
+    if (!Button_IsPressed(&button[B3])) {
+        ms_motor_control(&motor_shield_v1, MS_V1, M4, 0); // Stop Motor M4
+    }
+}
+
+
 bool Button_IsPressed(Button_TypeDef* button)
 {
     GPIO_PinState pin_state = HAL_GPIO_ReadPin(button->port, button->pin);

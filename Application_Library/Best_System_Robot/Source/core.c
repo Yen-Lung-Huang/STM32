@@ -298,8 +298,8 @@ bool json_action(char *JSON_STRING, uint16_t token_size) // sizeof(char)*strlen(
                 if (!strcmp(token->valuestring, "STATE_INIT")) {
                     roboticArmState = STATE_INIT;
                     printf("Robotic arm state set to INIT\r\n");
-                } else if (!strcmp(token->valuestring, "STATE_MOVE_TO_GRAB")) {
-                    roboticArmState = STATE_MOVE_TO_GRAB;
+                } else if (!strcmp(token->valuestring, "STATE_GRAB_SHUTTLECOCK")) {
+                    roboticArmState = STATE_GRAB_SHUTTLECOCK;
                     printf("Robotic arm state set to MOVE_TO_GRAB\r\n");
                 } else if (!strcmp(token->valuestring, "STATE_STOP")) {
                     roboticArmState = STATE_STOP;

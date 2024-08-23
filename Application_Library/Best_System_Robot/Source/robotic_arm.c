@@ -96,7 +96,6 @@ void HandleGrabShuttlecockState(void)
         break;
 
     case CLOSE_GRIPPER:
-
         if(!myDelay.active) {
             servo_control(&servo[S3], 0, ANGLE, true);
             myDelay.Start(&myDelay, 500);

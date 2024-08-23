@@ -49,16 +49,15 @@ void HandleInitState(void)
 {
     static enum {
         INIT_SERVOS,
-        MOVE_TO_START,
-        WAIT_FOR_STABILITY
+        MOVE_TO_START
     } initSubState = INIT_SERVOS;
 
     switch (initSubState) {
     case INIT_SERVOS:
         servo_control(&servo[S1], -3, ANGLE, true);
         servo_control(&servo[S2], 0, ANGLE, true);
-        servo_control(&servo[S3], 30, ANGLE, true);
-        if (is_pwm_at_angle(&servo[S1], -3) && is_pwm_at_angle(&servo[S2], 0) && is_pwm_at_angle(&servo[S3], 30)) {
+        servo_control(&servo[S3], 40, ANGLE, true);
+        if (is_pwm_at_angle(&servo[S1], -3) && is_pwm_at_angle(&servo[S2], 0) && is_pwm_at_angle(&servo[S3], 40)) {
             initSubState = MOVE_TO_START;
         }
         break;
@@ -68,15 +67,12 @@ void HandleInitState(void)
             ms_motor_control(&motor_shield_v1, MS_V1, M1, -1000);
         } else {
             ms_motor_control(&motor_shield_v1, MS_V1, M1, 0);
-            initSubState = WAIT_FOR_STABILITY;
-            myDelay.Start(&myDelay, 200);
-        }
-        break;
-
-    case WAIT_FOR_STABILITY:
-        if (myDelay.IsExpired(&myDelay)) {
-            roboticArmState = STATE_IDLE;
-            initSubState = INIT_SERVOS;  // Reset for next time
+            if(!myDelay.active) {
+                myDelay.Start(&myDelay, 200);
+            } else if (myDelay.IsExpired(&myDelay)) {
+                roboticArmState = STATE_IDLE;
+                initSubState = INIT_SERVOS;  // Reset for next time
+            }
         }
         break;
     }
@@ -86,8 +82,7 @@ void HandleGrabShuttlecockState(void)
 {
     static enum {
         MOVE_TO_GRAB,
-        CLOSE_GRIPPER,
-        CONFIRM_GRIP
+        CLOSE_GRIPPER
     } grabSubState = MOVE_TO_GRAB;
 
     switch (grabSubState) {
@@ -96,21 +91,16 @@ void HandleGrabShuttlecockState(void)
             ms_motor_control(&motor_shield_v1, MS_V1, M1, 1000);
         } else {
             ms_motor_control(&motor_shield_v1, MS_V1, M1, 0);
-            myDelay.Start(&myDelay, 200);
             grabSubState = CLOSE_GRIPPER;
         }
         break;
 
     case CLOSE_GRIPPER:
-        if (myDelay.IsExpired(&myDelay)) {
+
+        if(!myDelay.active) {
             servo_control(&servo[S3], 0, ANGLE, true);
             myDelay.Start(&myDelay, 500);
-            grabSubState = CONFIRM_GRIP;
-        }
-        break;
-
-    case CONFIRM_GRIP:
-        if (myDelay.IsExpired(&myDelay) && is_pwm_at_angle(&servo[S3], 0)) {
+        } else if (myDelay.IsExpired(&myDelay)) {
             roboticArmState = STATE_MOVE_TO_SCAN;
             grabSubState = MOVE_TO_GRAB;  // Reset for next time
         }

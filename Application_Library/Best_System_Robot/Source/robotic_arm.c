@@ -115,9 +115,9 @@ void HandleMoveToGrabState(void)
 
 void HandleGrabShuttlecockState(void)
 {
+    servo_control(&servo[S3], 0, ANGLE, true);
     if (!myDelay.active) {
-        servo_control(&servo[S3], 0, ANGLE, true);
-        myDelay.Start(&myDelay, 100);
+        myDelay.Start(&myDelay, 500);
     } else if (myDelay.IsExpired(&myDelay)) {
         roboticArmState = STATE_MOVE_TO_SCAN;
     }
@@ -185,7 +185,7 @@ void HandleSortAndDropState(void)
         }
 
         // Step 2: Rotate S2 to 90 degrees
-        if (!step2_done && s1Delay.IsExpired(&s1Delay)) {
+        if (step1_done && !step2_done && s1Delay.IsExpired(&s1Delay)) {
             printf("step 2\n");
             servo_control(&servo[S2], 90, ANGLE, true);
             s2Delay.Start(&s2Delay, 1000);
@@ -217,7 +217,7 @@ void HandleSortAndDropState(void)
         // Step 4: Adjust S1
         if (step3_done && !step4_done && m1Delay.IsExpired(&m1Delay)) {
             printf("step 4\n");
-            servo_control(&servo[S1], defect_result ? -65 : 65, ANGLE, true);
+            servo_control(&servo[S1], defect_result ? -85 : 65, ANGLE, true);
             s1Delay.Start(&s1Delay, 1000);
             step4_done = true;
         }

@@ -150,70 +150,68 @@ void HandleWaitForScanState(void)
 void HandleSortAndDropState(void)
 {
     static enum {
-        MOVE_HOLDER,
-        ROTATE_S2_90,
-        MOVE_M1_ROTATE_S2_180,
+        MOVE_HOLDER_AND_ROTATE,
         ADJUST_S1,
         RELEASE_SHUTTLECOCK,
         RESET_S1
-    } sortDropSubState = MOVE_HOLDER;
+    } sortDropSubState = MOVE_HOLDER_AND_ROTATE;
+    static NonBlockingDelay_TypeDef rotateDelay = INIT_NON_BLOCKING_DELAY();
 
     if (defect_result_received) {
         switch (sortDropSubState) {
-        case MOVE_HOLDER:
+        case MOVE_HOLDER_AND_ROTATE:
+            // Move holder
             if (!Button_IsPressed(defect_result ? &button[B4] : &button[B3])) {
                 ms_motor_control(&motor_shield_v1, MS_V1, M2, defect_result ? -1000 : 1000);
             } else {
                 ms_motor_control(&motor_shield_v1, MS_V1, M2, 0);
-                servo_control(&servo[S1], 0, ANGLE, true);
-                myDelay.Start(&myDelay, 200);
-                sortDropSubState = ROTATE_S2_90;
             }
-            break;
 
-        case ROTATE_S2_90:
-            if (myDelay.IsExpired(&myDelay)) {
-                servo_control(&servo[S2], 90, ANGLE, true);
-                if (is_pwm_at_angle(&servo[S2], 90)) {
-                    sortDropSubState = MOVE_M1_ROTATE_S2_180;
+            // Rotate S2 to 90 degrees
+            servo_control(&servo[S2], 90, ANGLE, true);
+
+            // Move M1 and rotate S2 to 180 degrees
+            if (is_pwm_at_angle(&servo[S2], 90)) {
+                ms_motor_control(&motor_shield_v1, MS_V1, M1, 1000);
+                if (Button_IsPressed(&button[B1])) {
+                    ms_motor_control(&motor_shield_v1, MS_V1, M1, 0);
+                    servo_control(&servo[S2], 180, ANGLE, true);
                 }
             }
-            break;
 
-        case MOVE_M1_ROTATE_S2_180:
-            ms_motor_control(&motor_shield_v1, MS_V1, M1, 1000);
-            if (Button_IsPressed(&button[B1])) {
-                ms_motor_control(&motor_shield_v1, MS_V1, M1, 0);
-                servo_control(&servo[S2], 180, ANGLE, true);
-                if (is_pwm_at_angle(&servo[S2], 180)) {
-                    sortDropSubState = ADJUST_S1;
-                }
+            // Check if all movements are complete
+            if (Button_IsPressed(defect_result ? &button[B4] : &button[B3]) && 
+                Button_IsPressed(&button[B1]) && 
+                is_pwm_at_angle(&servo[S2], 180)) {
+                sortDropSubState = ADJUST_S1;
             }
             break;
 
         case ADJUST_S1:
             servo_control(&servo[S1], defect_result ? -85 : 65, ANGLE, true);
             if (is_pwm_at_angle(&servo[S1], defect_result ? -85 : 65)) {
-                myDelay.Start(&myDelay, 500);
-                sortDropSubState = RELEASE_SHUTTLECOCK;
+                if (!rotateDelay.active) {
+                    rotateDelay.Start(&rotateDelay, 500);
+                } else if (rotateDelay.IsExpired(&rotateDelay)) {
+                    sortDropSubState = RELEASE_SHUTTLECOCK;
+                }
             }
             break;
 
         case RELEASE_SHUTTLECOCK:
-            if (myDelay.IsExpired(&myDelay)) {
-                servo_control(&servo[S3], 10, ANGLE, true);
-                myDelay.Start(&myDelay, 500);
+            servo_control(&servo[S3], 15, ANGLE, true);
+            if (!rotateDelay.active) {
+                rotateDelay.Start(&rotateDelay, 500);
+            } else if (rotateDelay.IsExpired(&rotateDelay)) {
                 sortDropSubState = RESET_S1;
             }
             break;
 
         case RESET_S1:
-            if (myDelay.IsExpired(&myDelay)) {
-                servo_control(&servo[S1], 0, ANGLE, true);
-                if (is_pwm_at_angle(&servo[S1], 0)) {
-                    roboticArmState = STATE_STORE_SHUTTLECOCK;
-                    sortDropSubState = MOVE_HOLDER;  // Reset for next time
-                }
+            servo_control(&servo[S1], 0, ANGLE, true);
+            if (is_pwm_at_angle(&servo[S1], 0)) {
+                roboticArmState = STATE_STORE_SHUTTLECOCK;
+                sortDropSubState = MOVE_HOLDER_AND_ROTATE;  // Reset for next time
             }
             break;
         }
@@ -223,36 +221,48 @@ void HandleSortAndDropState(void)
 void HandleStoreShuttlecockState(void)
 {
     static enum {
-        CHECK_BUCKET,
         PUSH_SHUTTLECOCK,
+        CHECK_BUCKET,
         ROTATE_WHEEL
-    } storeSubState = CHECK_BUCKET;
+    } storeSubState = PUSH_SHUTTLECOCK;
     static int check_count = 0;
+    static bool skip_check = true;
 
     switch (storeSubState) {
+    case PUSH_SHUTTLECOCK:
+        // Push shuttlecock
+        ms_motor_control(&motor_shield_v1, MS_V1, M2, defect_result ? 1000 : -1000);
+
+        // Simultaneously execute STATE_INIT
+        HandleInitState();
+
+        if (Button_IsPressed(defect_result ? &button[B3] : &button[B4])) {
+            ms_motor_control(&motor_shield_v1, MS_V1, M2, 0);
+            check_count = 0;
+            if (skip_check) {
+                roboticArmState = STATE_GRAB_SHUTTLECOCK;
+            } else {
+                storeSubState = CHECK_BUCKET;
+            }
+        }
+        break;
+
     case CHECK_BUCKET:
-        if (!CheckBucketFull(defect_result)) {
-            storeSubState = PUSH_SHUTTLECOCK;
+        if (!CheckBucketFull(defect_result) || skip_check) {
+            roboticArmState = STATE_GRAB_SHUTTLECOCK;
+            storeSubState = PUSH_SHUTTLECOCK;  // Reset for next time
         } else {
             storeSubState = ROTATE_WHEEL;
             check_count++;
         }
         break;
 
-    case PUSH_SHUTTLECOCK:
-        ms_motor_control(&motor_shield_v1, MS_V1, M2, defect_result ? 1000 : -1000);
-        if (Button_IsPressed(defect_result ? &button[B3] : &button[B4])) {
-            ms_motor_control(&motor_shield_v1, MS_V1, M2, 0);
-            check_count = 0;
-            roboticArmState = STATE_INIT;
-            storeSubState = CHECK_BUCKET;  // Reset for next time
-        }
-        break;
-
     case ROTATE_WHEEL:
         RotateWheel(defect_result);
-        myDelay.Start(&myDelay, 1000);
-        if (myDelay.IsExpired(&myDelay)) {
+        static NonBlockingDelay_TypeDef wheelDelay = INIT_NON_BLOCKING_DELAY();
+        if (!wheelDelay.active) {
+            wheelDelay.Start(&wheelDelay, 1000);
+        } else if (wheelDelay.IsExpired(&wheelDelay)) {
             if (check_count >= 5) {
                 roboticArmState = STATE_STOP;
             } else {

@@ -45,6 +45,11 @@ void HandleIdleState(void)
     // Wait for further instructions
 }
 
+enum { // State machine for grabbing shuttlecock and for initial checking
+    MOVE_TO_GRAB,
+    CLOSE_GRIPPER
+} grabSubState = MOVE_TO_GRAB;
+
 void HandleInitState(void)
 {
     static enum {
@@ -72,6 +77,10 @@ void HandleInitState(void)
             } else if (myDelay.IsExpired(&myDelay)) {
                 roboticArmState = STATE_IDLE;
                 initSubState = INIT_SERVOS;  // Reset for next time
+
+                // Modify the grabSubState of HandleGrabShuttlecockState
+                // extern enum { MOVE_TO_GRAB, CLOSE_GRIPPER } grabSubState;
+                grabSubState = MOVE_TO_GRAB;
             }
         }
         break;
@@ -80,10 +89,10 @@ void HandleInitState(void)
 
 void HandleGrabShuttlecockState(void)
 {
-    static enum {
-        MOVE_TO_GRAB,
-        CLOSE_GRIPPER
-    } grabSubState = MOVE_TO_GRAB;
+    // static enum {
+    //     MOVE_TO_GRAB,
+    //     CLOSE_GRIPPER
+    // } grabSubState = MOVE_TO_GRAB;
 
     switch (grabSubState) {
     case MOVE_TO_GRAB:
@@ -180,9 +189,9 @@ void HandleSortAndDropState(void)
             }
 
             // Check if all movements are complete
-            if (Button_IsPressed(defect_result ? &button[B4] : &button[B3]) && 
-                Button_IsPressed(&button[B1]) && 
-                is_pwm_at_angle(&servo[S2], 180)) {
+            if (Button_IsPressed(defect_result ? &button[B4] : &button[B3]) &&
+                    Button_IsPressed(&button[B1]) &&
+                    is_pwm_at_angle(&servo[S2], 180)) {
                 sortDropSubState = ADJUST_S1;
             }
             break;
@@ -258,7 +267,7 @@ void HandleStoreShuttlecockState(void)
         break;
 
     case ROTATE_WHEEL:
-        RotateWheel(defect_result);
+        RotateRevolver(defect_result);
         static NonBlockingDelay_TypeDef wheelDelay = INIT_NON_BLOCKING_DELAY();
         if (!wheelDelay.active) {
             wheelDelay.Start(&wheelDelay, 1000);
@@ -290,7 +299,7 @@ bool CheckBucketFull(bool defect_result)
     return distance < 5.0;
 }
 
-void RotateWheel(bool defect_result)
+void RotateRevolver(bool defect_result)
 {
     if (defect_result) {
         if (!Button_IsPressed(&button[B5])) {
